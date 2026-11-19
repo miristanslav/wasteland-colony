@@ -598,7 +598,7 @@ function angleDelta(a,b){let d=a-b;while(d>Math.PI)d-=Math.PI*2;while(d< -Math.P
 function pointerPair(){const p=[...pointers.values()];if(p.length<2)return null;return{dist:Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y),angle:Math.atan2(p[1].y-p[0].y,p[1].x-p[0].x)};}
 canvas.addEventListener('pointerdown',e=>{
  canvas.setPointerCapture(e.pointerId);pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
- if(pointers.size===1)cameraGesture={x:e.clientX,y:e.clientY,cx:cam.x,cz:cam.z,moved:false,pinch:false};
+ if(pointers.size===1)cameraGesture={x:e.clientX,y:e.clientY,lastX:e.clientX,lastY:e.clientY,cx:cam.x,cz:cam.z,moved:false,pinch:false};
  else if(pointers.size>=2){const pair=pointerPair();cameraGesture={pinch:true,moved:true,lastDist:pair.dist,lastAngle:pair.angle};}
 });
 canvas.addEventListener('pointermove',e=>{
@@ -618,15 +618,16 @@ canvas.addEventListener('pointermove',e=>{
   return;
  }
  if(!cameraGesture||cameraGesture.pinch)return;
- const dx=e.clientX-cameraGesture.x,dy=e.clientY-cameraGesture.y;
- if(Math.hypot(dx,dy)>6)cameraGesture.moved=true;
+ const totalDx=e.clientX-cameraGesture.x,totalDy=e.clientY-cameraGesture.y,dx=e.clientX-cameraGesture.lastX,dy=e.clientY-cameraGesture.lastY;
+ cameraGesture.lastX=e.clientX;cameraGesture.lastY=e.clientY;
+ if(Math.hypot(totalDx,totalDy)>6)cameraGesture.moved=true;
  if(follow){camYawTarget-=dx*CAMERA_ROTATION_SENSITIVITY;cam.pitch=clamp(cam.pitch+dy*.00135,.40,1.12);}
- else{const pitchScale=1/Math.max(.42,Math.cos(cam.pitch));const scale=cam.dist/Math.max(320,canvas.clientHeight)*.82*pitchScale,c=Math.cos(cam.yaw),ss=Math.sin(cam.yaw);cam.x=cameraGesture.cx+(-dx*c+dy*ss)*scale;cam.z=cameraGesture.cz+(-dx*ss-dy*c)*scale;clampCamera();}
+ else{const pitchScale=1/Math.max(.42,Math.cos(cam.pitch));const scale=cam.dist/Math.max(320,canvas.clientHeight)*.82*pitchScale,c=Math.cos(cam.yaw),ss=Math.sin(cam.yaw);cam.x=cameraGesture.cx+(-totalDx*c+totalDy*ss)*scale;cam.z=cameraGesture.cz+(-totalDx*ss-totalDy*c)*scale;clampCamera();}
 });
 canvas.addEventListener('pointerup',e=>{
  pointers.delete(e.pointerId);
  if(!pointers.size){if(cameraGesture&&!cameraGesture.moved&&!cameraGesture.pinch)tapWorld(e.clientX,e.clientY);cameraGesture=null;}
- else if(cameraGesture&&cameraGesture.pinch){const remaining=[...pointers.values()][0];cameraGesture={x:remaining.x,y:remaining.y,cx:cam.x,cz:cam.z,moved:true,pinch:false};}
+ else if(cameraGesture&&cameraGesture.pinch){const remaining=[...pointers.values()][0];cameraGesture={x:remaining.x,y:remaining.y,lastX:remaining.x,lastY:remaining.y,cx:cam.x,cz:cam.z,moved:true,pinch:false};}
 });
 canvas.addEventListener('pointercancel',e=>{pointers.delete(e.pointerId);cameraGesture=null;});
 let moveVector={x:0,y:0},joyPointer=null;const joy=$('joystick'),base=$('stickBase'),knob=$('stickKnob');
