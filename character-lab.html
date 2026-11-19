@@ -2,7 +2,7 @@
 <html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>Wasteland Colony — Character Lab</title>
 <style>
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#151a1d;color:#e8e5dc;font:14px system-ui}canvas{width:100%;height:100%;display:block;touch-action:none}#panel{position:fixed;left:12px;top:12px;z-index:2;background:#171d20dd;border:1px solid #59605a;border-radius:10px;padding:10px;max-width:calc(100% - 24px)}#panel b{display:block;margin-bottom:6px}button{background:#333d3e;color:#eee;border:1px solid #68716b;border-radius:7px;padding:8px 11px;margin:3px}small{display:block;color:#b8b8ad;margin-top:5px}
-</style></head><body><div id="panel"><b>Character Lab · анатомия v2</b><button id="idle">Стойка</button><button id="walk">Ходьба</button><button id="front">Спереди</button><button id="side">Сбоку</button><button id="back">Сзади</button><small>Вращение — одним пальцем. Приближение — колёсиком. Проверяй лицо, силуэт и экипировку с разных сторон.</small></div><canvas id="view"></canvas>
+</style></head><body><div id="panel"><b>Character Lab · анатомия v3</b><button id="idle">Стойка</button><button id="walk">Ходьба</button><button id="front">Спереди</button><button id="side">Сбоку</button><button id="back">Сзади</button><small>Вращение — одним пальцем. Приближение — колёсиком. Проверяй лицо, силуэт и экипировку с разных сторон.</small></div><canvas id="view"></canvas>
 <script>
 (()=>{'use strict';
 const canvas=document.getElementById('view'),gl=canvas.getContext('webgl',{antialias:true});if(!gl){document.body.innerHTML='WebGL недоступен';return}
@@ -71,14 +71,18 @@ ellipsoid(.16,1.03,.222,.055,.07,.025,[.43,.35,.24],vp);
 draw(limb([0,1.17,-.19],[0,.91,-.19],.115,.115,'bedroll'),I(),[.19,.15,.10],vp);
 draw(limb([-.12,1.10,-.22],[.12,1.10,-.22],.018,.018,'bedroll-strap'),I(),[.47,.38,.25],vp);
 for(let s of [-1,1]){
- let hip=[s*.145,.72,0],knee=[s*.15,.39,sw*s*.38],ankle=[s*.15,.13,sw*s],toe=[s*.15,.08,-.13+sw*s];
+ let hip=[s*.145,.72,0],knee=[s*.15,.39,sw*s*.38],ankle=[s*.15,.13,sw*s],toe=[s*.15,.08,.17+sw*s];
  draw(limb(hip,knee,.112,.083,'leg-upper-'+s),I(),[.34,.30,.24],vp);
  draw(limb(knee,ankle,.078,.060,'leg-lower-'+s),I(),[.31,.28,.23],vp);
  ellipsoid(knee[0],knee[1],knee[2]+.035,.083,.075,.055,[.38,.35,.29],vp);
  draw(limb(ankle,toe,.085,.10,'foot-'+s),I(),[.17,.13,.09],vp);
  // Shin wraps, boot cuffs and toe caps.
  ellipsoid(s*.15,.20,sw*s,.078,.045,.075,[.24,.22,.18],vp);
- ellipsoid(s*.15,.105,-.09+sw*s,.095,.055,.14,[.20,.16,.12],vp);
+ ellipsoid(s*.15,.105,.105+sw*s,.095,.055,.17,[.20,.16,.12],vp);
+ // Raised toe cap points forward (+Z); heel counter remains behind the ankle.
+ ellipsoid(s*.15,.115,.235+sw*s,.079,.043,.065,[.28,.23,.17],vp);
+ ellipsoid(s*.15,.115,-.035+sw*s,.075,.052,.055,[.15,.13,.10],vp);
+ ellipsoid(s*.15,.165,.025+sw*s,.082,.025,.085,[.39,.32,.22],vp);
  let shoulder=[s*.34,1.23,0],elbow=[s*.39,.98,sw*s*.42],hand=[s*.39,.73,sw*s*.75];
  draw(limb([s*.25,1.29,0],shoulder,.145,.12,'shoulder-'+s),I(),[.40,.36,.29],vp);
  ellipsoid(shoulder[0],shoulder[1],shoulder[2],.115,.12,.115,[.41,.37,.30],vp);
@@ -86,6 +90,9 @@ for(let s of [-1,1]){
  ellipsoid(elbow[0],elbow[1],elbow[2],.071,.068,.068,[.43,.36,.28],vp);
  draw(limb(elbow,hand,.071,.052,'arm-lower-'+s),I(),[.40,.34,.27],vp);
  ellipsoid(hand[0],hand[1]-.025,hand[2],.061,.052,.048,[.43,.31,.23],vp);
+ // Four compact fingers and an opposable thumb, visible in the front view.
+ for(let f=0;f<4;f++) ellipsoid(hand[0]+(f-1.5)*.022,hand[1]-.067,hand[2]+.014,.010,.035,.012,[.43,.31,.23],vp);
+ ellipsoid(hand[0]-s*.055,hand[1]-.035,hand[2]+.018,.018,.034,.014,[.43,.31,.23],vp);
  draw(limb([s*.39,.74,sw*s*.75],[s*.39,.66,sw*s*.75-.05],.055,.04,'hand-'+s),I(),[.36,.25,.18],vp);
  // Leather bracer and small utility pouch.
  ellipsoid(s*.39,.84,sw*s*.48,.078,.10,.076,[.25,.23,.19],vp);
