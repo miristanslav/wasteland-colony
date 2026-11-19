@@ -2,7 +2,7 @@
 <html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>Wasteland Colony — Character Lab</title>
 <style>
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#151a1d;color:#e8e5dc;font:14px system-ui}canvas{width:100%;height:100%;display:block;touch-action:none}#panel{position:fixed;left:12px;top:12px;z-index:2;background:#171d20dd;border:1px solid #59605a;border-radius:10px;padding:10px;max-width:calc(100% - 24px)}#panel b{display:block;margin-bottom:6px}button{background:#333d3e;color:#eee;border:1px solid #68716b;border-radius:7px;padding:8px 11px;margin:3px}small{display:block;color:#b8b8ad;margin-top:5px}
-</style></head><body><div id="panel"><b>Character Lab · анатомия v3</b><button id="idle">Стойка</button><button id="walk">Ходьба</button><button id="front">Спереди</button><button id="side">Сбоку</button><button id="back">Сзади</button><small>Вращение — одним пальцем. Приближение — колёсиком. Проверяй лицо, силуэт и экипировку с разных сторон.</small></div><canvas id="view"></canvas>
+</style></head><body><div id="panel"><b>Character Lab · походка v4</b><button id="idle">Стойка</button><button id="walk">Ходьба</button><button id="front">Спереди</button><button id="side">Сбоку</button><button id="back">Сзади</button><small>Вращение — одним пальцем. Приближение — колёсиком. Проверяй лицо, силуэт и экипировку с разных сторон.</small></div><canvas id="view"></canvas>
 <script>
 (()=>{'use strict';
 const canvas=document.getElementById('view'),gl=canvas.getContext('webgl',{antialias:true});if(!gl){document.body.innerHTML='WebGL недоступен';return}
@@ -83,7 +83,9 @@ for(let s of [-1,1]){
  ellipsoid(s*.15,.115,.235+sw*s,.079,.043,.065,[.28,.23,.17],vp);
  ellipsoid(s*.15,.115,-.035+sw*s,.075,.052,.055,[.15,.13,.10],vp);
  ellipsoid(s*.15,.165,.025+sw*s,.082,.025,.085,[.39,.32,.22],vp);
- let shoulder=[s*.34,1.23,0],elbow=[s*.39,.98,sw*s*.42],hand=[s*.39,.73,sw*s*.75];
+ // Natural contralateral gait: each arm swings opposite to its same-side leg.
+ // Legs use +sw*s, arms use -sw*s: left leg forward pairs with right arm forward.
+ let armSwing=-sw*s,shoulder=[s*.34,1.23,0],elbow=[s*.39,.98,armSwing*.42],hand=[s*.39,.73,armSwing*.75];
  draw(limb([s*.25,1.29,0],shoulder,.145,.12,'shoulder-'+s),I(),[.40,.36,.29],vp);
  ellipsoid(shoulder[0],shoulder[1],shoulder[2],.115,.12,.115,[.41,.37,.30],vp);
  draw(limb(shoulder,elbow,.096,.071,'arm-upper-'+s),I(),[.43,.37,.29],vp);
@@ -93,7 +95,7 @@ for(let s of [-1,1]){
  // Four compact fingers and an opposable thumb, visible in the front view.
  for(let f=0;f<4;f++) ellipsoid(hand[0]+(f-1.5)*.022,hand[1]-.067,hand[2]+.014,.010,.035,.012,[.43,.31,.23],vp);
  ellipsoid(hand[0]-s*.055,hand[1]-.035,hand[2]+.018,.018,.034,.014,[.43,.31,.23],vp);
- draw(limb([s*.39,.74,sw*s*.75],[s*.39,.66,sw*s*.75-.05],.055,.04,'hand-'+s),I(),[.36,.25,.18],vp);
+ draw(limb([s*.39,.74,armSwing*.75],[s*.39,.66,armSwing*.75-.05],.055,.04,'hand-'+s),I(),[.36,.25,.18],vp);
  // Leather bracer and small utility pouch.
  ellipsoid(s*.39,.84,sw*s*.48,.078,.10,.076,[.25,.23,.19],vp);
  ellipsoid(s*.25,.88,.13,.075,.08,.06,[.28,.23,.17],vp);
