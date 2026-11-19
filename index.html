@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#182126">
-<meta name="application-name" content="Wasteland Colony 0.0.32">
+<meta name="application-name" content="Wasteland Colony 0.0.33">
 <style>
 *{box-sizing:border-box}
 html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#111820;color:#eef2e8;font-family:system-ui,Arial;touch-action:none}
@@ -508,31 +508,86 @@ function buildRiverMesh(scale=1){
 const riverWater=buildRiverMesh(1),riverGlint=buildRiverMesh(.19);
 for(const u of squad)u.p.y=surfaceHeight(u.p.x,u.p.z);
 for(const r of raiders)r.p.y=surfaceHeight(r.p.x,r.p.z);
+function buildCharacterSphere(){
+ const verts=[],lat=10,lon=14;
+ for(let y=0;y<lat;y++){
+  const a0=-Math.PI/2+y/lat*Math.PI,a1=-Math.PI/2+(y+1)/lat*Math.PI;
+  for(let x=0;x<lon;x++){
+   const b0=x/lon*Math.PI*2,b1=(x+1)/lon*Math.PI*2;
+   const point=(a,b)=>[Math.cos(a)*Math.cos(b),Math.sin(a),Math.cos(a)*Math.sin(b)];
+   const p00=point(a0,b0),p01=point(a0,b1),p10=point(a1,b0),p11=point(a1,b1);
+   verts.push(...p00,...p10,...p11,...p00,...p11,...p01);
+  }
+ }
+ const b=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,b);
+ gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(verts),gl.STATIC_DRAW);
+ return {buffer:b,count:verts.length/3};
+}
+const characterSphere=buildCharacterSphere();
+function drawEllipsoid(x,y,z,sx,sy,sz,color,vp){
+ gl.bindBuffer(gl.ARRAY_BUFFER,characterSphere.buffer);
+ gl.vertexAttribPointer(aPos,3,gl.FLOAT,false,0,0);
+ gl.enableVertexAttribArray(aPos);
+ gl.uniformMatrix4fv(uMVP,false,multiply(vp,model(x,y,z,sx,sy,sz)));
+ gl.uniform3fv(uColor,color);
+ gl.drawArrays(gl.TRIANGLES,0,characterSphere.count);
+}
 function drawHumanoid(u,y,vp,hostile=false,moving=false,phase=0){
- const p=u.p,step=moving?Math.sin(animTime*10+phase):0,bob=moving?Math.abs(Math.cos(animTime*10+phase))*.035:0;
+ const p=u.p,step=moving?Math.sin(animTime*10+phase):0,bob=moving?Math.abs(Math.cos(animTime*10+phase))*.025:0;
  const facing=Number.isFinite(u.facing)?u.facing:0,fc=Math.cos(facing),fs=Math.sin(facing);
- const part=(x,yy,z,sx,sy,sz,color)=>{const dx=x-p.x,dz=z-p.z;drawBox(p.x+dx*fc-dz*fs,yy,p.z+dx*fs+dz*fc,sx,sy,sz,color,vp);};
- const torso=hostile?[.48,.17,.14]:(u.color||[.25,.55,.68]),skin=hostile?[.48,.34,.27]:[.66,.48,.35],cloth=hostile?[.20,.16,.14]:[.16,.20,.22],boot=[.10,.11,.11];
- // Ноги и сапоги — отдельные части, поэтому шаг хорошо читается даже на небольшом экране.
+ const female=!hostile&&u.gender==='female';
+ const part=(x,yy,z,sx,sy,sz,color)=>{const dx=x-p.x,dz=z-p.z;drawEllipsoid(p.x+dx*fc-dz*fs,yy,p.z+dx*fs+dz*fc,sx,sy,sz,color,vp);};
+ const skin=hostile?[.48,.34,.27]:[.66,.48,.35];
+ const cloth=hostile?[.20,.16,.14]:[.16,.20,.22];
+ const leather=hostile?[.12,.105,.09]:[.25,.17,.105];
+ const metal=hostile?[.31,.29,.25]:[.39,.41,.39];
+ const shirt=hostile?[.48,.17,.14]:(u.color||[.25,.55,.68]);
+ const legWidth=female?.115:.135,shoulder=female?.36:.42,hip=female?.34:.37;
+ // Boots, calves and thighs: rounded overlapping forms create continuous limbs.
  for(let side=-1;side<=1;side+=2){
-  const swing=step*side*.13,px=p.x+side*.13,pz=p.z+swing;
-  part(px,y,pz,.16,.57,.19,cloth);
-  part(px,y+.01,pz-.025,.19,.14,.27,boot);
+  const swing=step*side*.16,px=p.x+side*(female?.115:.14),pz=p.z+swing;
+  part(px,y+.13,pz-.035,.145,.15,.245,leather);
+  part(px,y+.34,pz,.105,.27,.115,cloth);
+  part(px,y+.57,p.z+step*side*.075,.125,.25,.135,shirt);
+  part(px,y+.075,pz-.09,.145,.075,.19,metal);
  }
- // Таз, корпус и пояс.
- part(p.x,y+.53+bob,p.z,.43,.25,.29,cloth);
- part(p.x,y+.73+bob,p.z,.48,.57,.31,torso);
- part(p.x,y+.76+bob,p.z-.164,.30,.12,.025,hostile?[.30,.12,.10]:[.72,.56,.30]);
- // Руки с простым встречным движением.
+ // Pelvis and layered torso, shaped rather than block-built.
+ part(p.x,y+.72+bob,p.z,.39,.25,.29,cloth);
+ part(p.x,y+.91+bob,p.z,.39,.43,.255,shirt);
+ part(p.x,y+1.04+bob,p.z,.43,.23,.27,shirt);
+ part(p.x,y+.80+bob,p.z-.012,.40,.105,.285,leather);
+ // Neck and head with jaw, cheeks and ears.
+ part(p.x,y+1.23+bob,p.z,.115,.16,.12,skin);
+ part(p.x,y+1.43+bob,p.z,.205,.265,.19,skin);
+ part(p.x,y+1.32+bob,p.z-.045,.16,.105,.17,skin);
+ for(let side=-1;side<=1;side+=2)part(p.x+side*.205,y+1.43+bob,p.z,.045,.075,.055,skin);
+ // Hair/cap silhouette, brow, nose and eyes are separate lightweight forms.
+ const hair=hostile?[.13,.105,.085]:[.105,.085,.065];
+ part(p.x,y+1.62+bob,p.z+.005,.215,.105,.205,hair);
+ part(p.x,y+1.50+bob,p.z-.15,.17,.045,.055,hair);
+ part(p.x,y+1.415+bob,p.z-.178,.035,.052,.035,skin);
  for(let side=-1;side<=1;side+=2){
-  const armSwing=-step*side*.11,ax=p.x+side*.31,az=p.z+armSwing;
-  part(ax,y+.62+bob,az,.14,.48,.16,torso);
-  part(ax,y+.52+bob,az-.015,.15,.13,.17,skin);
+  part(p.x+side*.075,y+1.465+bob,p.z-.164,.034,.023,.018,[.91,.83,.68]);
+  part(p.x+side*.075,y+1.465+bob,p.z-.181,.012,.018,.009,[.12,.105,.085]);
  }
- // Шея, голова и волосы/капюшон.
- part(p.x,y+1.27+bob,p.z,.13,.14,.14,skin);
- part(p.x,y+1.39+bob,p.z-.015,.29,.31,.29,skin);
- part(p.x,y+1.62+bob,p.z+.005,.30,.09,.30,hostile?[.16,.12,.10]:[.12,.16,.18]);
+ // Shoulder pads, upper/lower arms, gloves and forearm wraps.
+ for(let side=-1;side<=1;side+=2){
+  const armSwing=-step*side*.13,ax=p.x+side*shoulder,az=p.z+armSwing;
+  part(ax,y+1.12+bob,az,.15,.17,.15,leather);
+  part(p.x+side*.39,y+.91+bob,az,.105,.25,.11,shirt);
+  part(p.x+side*.405,y+.67+bob,az-.015,.09,.22,.095,skin);
+  part(p.x+side*.405,y+.51+bob,az-.025,.105,.105,.115,leather);
+  part(p.x+side*.405,y+.63+bob,az-.02,.11,.085,.12,metal);
+ }
+ // Chest strap, buckle and small traveler's shoulder detail.
+ part(p.x-.105,y+1.00+bob,p.z-.205,.055,.36,.035,leather);
+ part(p.x-.105,y+.84+bob,p.z-.235,.105,.075,.025,metal);
+ part(p.x+.12,y+1.17+bob,p.z-.13,.105,.075,.085,leather);
+ // Small collar and cloth folds add depth without expensive textures.
+ part(p.x,y+1.17+bob,p.z-.02,.20,.07,.21,cloth);
+ part(p.x+.16,y+.91+bob,p.z-.17,.035,.20,.025,metal);
+ gl.bindBuffer(gl.ARRAY_BUFFER,buffer);
+ gl.vertexAttribPointer(aPos,3,gl.FLOAT,false,0,0);
 }
 function render(){
  gl.clearColor(.035,.145,.205,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);gl.enable(gl.DEPTH_TEST);
@@ -665,7 +720,7 @@ $('follow').onclick=()=>{follow=!follow;if(follow){cam.x=squad[0].p.x;cam.z=squa
 $('stop').onclick=()=>{const u=squad[0];u.target=null;u.task='idle';message='Ты остановился.';updateUI();};
 $('gather').onclick=()=>{const u=squad[0];let nearest=null,best=1e9;objects.forEach(o=>{const d=Math.hypot(o.x-u.p.x,o.z-u.p.z);if(d<best){best=d;nearest=o;}});if(nearest){u.target=V(nearest.x,surfaceHeight(nearest.x,nearest.z),nearest.z);u.task='gather';u.targetObject=nearest;message=nearest.type==='tree'?'Путник идёт добывать дерево.':'Путник идёт добывать камень.';}updateUI();};
 $('attack').onclick=()=>{const u=squad[0];let target=null,best=3.8;for(const r of raiders)if(r.alive){const d=Math.hypot(r.p.x-u.p.x,r.p.z-u.p.z);if(d<best){best=d;target=r;}}if(!target){message='Враг слишком далеко. Подойди ближе.';}else if(combatCooldown<=0){target.hp-=25;combatCooldown=.7;message=target.hp<=0?'Разбойник повержен. Ты обыскал его и нашёл припасы.':'Путник атаковал разбойника!';if(target.hp<=0){target.alive=false;resources.food+=2;}}updateUI();};
-function save(){const data={version:'0.0.32',startRegionId,squad:squad.map(u=>({p:u.p,name:u.name,hunger:u.hunger,fatigue:u.fatigue})),cam,resources,gameMinutes,dayCount,berryBushes,scoutHealth,raiders};try{localStorage.setItem('wasteland_colony_save',JSON.stringify(data));message='Сохранено на этом устройстве.';}catch(e){message='Браузер запретил локальное сохранение для file://. Игра продолжит работать.';}updateUI();}
+function save(){const data={version:'0.0.33',startRegionId,squad:squad.map(u=>({p:u.p,name:u.name,hunger:u.hunger,fatigue:u.fatigue})),cam,resources,gameMinutes,dayCount,berryBushes,scoutHealth,raiders};try{localStorage.setItem('wasteland_colony_save',JSON.stringify(data));message='Сохранено на этом устройстве.';}catch(e){message='Браузер запретил локальное сохранение для file://. Игра продолжит работать.';}updateUI();}
 function load(){try{const d=JSON.parse(localStorage.getItem('wasteland_colony_save')||'null');if(!d)throw Error();startRegionId=d.startRegionId||'plains';d.squad.forEach((u,i)=>{if(squad[i]){let px=clamp(u.p.x,-WORLD+8,WORLD-8),pz=clamp(u.p.z,-WORLD+8,WORLD-8);if(!isLand(px,pz)){px=squad[0].p.x;pz=squad[0].p.z;}squad[i].p=V(px,surfaceHeight(px,pz),pz);squad[i].target=null;if(Number.isFinite(u.hunger))squad[i].hunger=u.hunger;if(Number.isFinite(u.fatigue))squad[i].fatigue=u.fatigue;}});if(d.cam)cam={...cam,...d.cam,x:Number(d.cam.x)||0,z:Number(d.cam.z)||0,dist:clamp(Number(d.cam.dist)||32,3.5,390)};clampCamera();camYawTarget=cam.yaw;resources={...resources,...(d.resources||{})};if(Number.isFinite(d.gameMinutes))gameMinutes=d.gameMinutes;if(Number.isFinite(d.dayCount))dayCount=d.dayCount;if(Array.isArray(d.berryBushes))d.berryBushes.forEach((b,i)=>{if(berryBushes[i])berryBushes[i].berries=clamp(Number(b.berries)||0,0,3);});if(Number.isFinite(d.scoutHealth))scoutHealth=clamp(d.scoutHealth,0,100);if(Array.isArray(d.raiders))d.raiders.forEach((r,i)=>{if(raiders[i]){raiders[i].hp=clamp(Number(r.hp)||0,0,60);raiders[i].alive=!!r.alive;raiders[i].p=V(r.p.x,0,r.p.z);}});gameStarted=true;$('startScreen').style.display='none';$('mainMenu').style.display='none';follow=true;cam.x=squad[0].p.x;cam.z=squad[0].p.z;message='Сохранение загружено.';}catch(e){message='Сохранение не найдено или повреждено.';}updateUI();}
 function traceCoastPath(ctx,mapScale,ox=0,oy=0){
  ctx.beginPath();
