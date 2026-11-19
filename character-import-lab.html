@@ -16,10 +16,10 @@ label{font-size:12px;color:#c3c5bd}input[type=range]{width:110px;vertical-align:
 <div id="panel">
 <h3>Character Import Lab · прототип импорта v1</h3>
 <p>Загрузи модель <b>.GLB</b> или <b>.GLTF</b> с телефона. Лаборатория автоматически подгонит рост, покажет скелетные анимации и позволит сравнить стойку и ходьбу. Файл остаётся на твоём устройстве.</p>
-<div class="row"><label class="file" for="modelFile">Загрузить 3D-модель</label><input id="modelFile" type="file" accept=".glb,.gltf,model/gltf-binary,model/gltf+json"><button id="reset">Сброс камеры</button><button id="wire">Скелет: выкл.</button></div>
+<div class="row"><label>Готовая модель</label><select id="preset"><option value="https://gobkit.com/freebies/human004/ReconScout.glb">Recon Scout — разведчик</option><option value="https://gobkit.com/freebies/human004/CombatEngineer.glb">Combat Engineer — инженер</option><option value="https://gobkit.com/freebies/human004/CombatMedic.glb">Combat Medic — медик</option><option value="https://gobkit.com/freebies/human004/ArmySniper.glb">Army Sniper — снайпер</option><option value="https://gobkit.com/freebies/human022/ConvictCommando.glb">Convict Commando — заключённый-боец</option><option value="https://gobkit.com/freebies/human022/NightReconScout.glb">Night Recon Scout — ночной разведчик</option></select><button id="loadPreset">Загрузить</button></div><div class="row"><label class="file" for="modelFile">Загрузить модель с телефона</label><input id="modelFile" type="file" accept=".glb,.gltf,model/gltf-binary,model/gltf+json"><button id="reset">Сброс камеры</button><button id="wire">Скелет: выкл.</button></div>
 <div class="row"><label>Анимация</label><select id="clips" disabled><option>Сначала загрузи модель</option></select><label>Скорость <span id="speedVal">1.0×</span></label><input id="speed" type="range" min="0.25" max="1.75" step="0.05" value="1"></div>
 <div id="status">Ожидаю модель. Поддерживаются встроенные анимации GLB/GLTF.</div>
-<p>Кандидаты: <a href="https://theunseenvulga.itch.io/3d-charater-riggeddiesel" target="_blank" rel="noopener">Diesel — survival-персонаж, CC0, Mixamo-ready</a> · <a href="https://kenney-assets.itch.io/animated-characters-3" target="_blank" rel="noopener">Kenney — 4 скина и 3 готовые анимации, CC0</a>.</p>
+<p>Встроенные модели Gobkit загружаются прямо с источника (CC0 1.0, коммерческое использование и изменение разрешены, без указания авторства). Это кандидаты для оценки рига и анимаций; внешний стиль будем переделывать под суровый мир Wasteland Colony. <a href="https://gobkit.com/freebies" target="_blank" rel="noopener">Каталог моделей</a> · <a href="https://theunseenvulga.itch.io/3d-charater-riggeddiesel" target="_blank" rel="noopener">Diesel — survival-персонаж</a>.</p>
 </div>
 <div id="help">Вращение — одним пальцем · Приближение — двумя пальцами / колесиком · Для начала скачай GLB и выбери его выше</div>
 <script type="module">
@@ -57,6 +57,20 @@ document.getElementById('modelFile').addEventListener('change',e=>{
   const bones=[];root.traverse(o=>{if(o.isBone)bones.push(o)});
   setStatus('Загружено: '+file.name+' · рост '+height.toFixed(2)+' м (нормализован до 1,8 м) · полигональных объектов: '+countMeshes(root)+' · костей: '+bones.length+' · анимаций: '+g.animations.length+(g.animations.length?' — выбери клип выше.':' — модель статичная, можно добавить риг/анимации отдельно.'));
  },undefined,err=>setStatus('Ошибка загрузки: '+(err?.message||err)));
+});
+document.getElementById('loadPreset').addEventListener('click',()=>{
+ const url=document.getElementById('preset').value,label=document.getElementById('preset').selectedOptions[0]?.textContent||'Gobkit model';
+ disposeModel();setStatus('Загружаю '+label+'…');
+ new GLTFLoader().load(url,g=>{
+  root=g.scene;const box=new THREE.Box3().setFromObject(root),size=box.getSize(new THREE.Vector3()),center=box.getCenter(new THREE.Vector3());
+  const height=Math.max(size.y,.001),scale=1.8/height;root.scale.setScalar(scale);root.position.set(-center.x*scale,-box.min.y*scale,-center.z*scale);
+  root.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;if(o.material)o.material.side=THREE.DoubleSide}});
+  scene.add(root);mixer=new THREE.AnimationMixer(root);clipSelect.innerHTML='';actions=[];
+  if(g.animations.length){g.animations.forEach((clip,i)=>{const opt=document.createElement('option');opt.value=i;opt.textContent=clip.name||('Анимация '+(i+1));clipSelect.appendChild(opt);actions.push(mixer.clipAction(clip))});clipSelect.disabled=false;playClip(0)}else{clipSelect.disabled=true;clipSelect.innerHTML='<option>В модели нет анимаций</option>'}
+  if(wire)addSkeletons();controls.target.set(0,.9,0);camera.position.set(2.7,1.8,3.8);controls.update();
+  const bones=[];root.traverse(o=>{if(o.isBone)bones.push(o)});
+  setStatus('Загружено: '+label+' · рост '+height.toFixed(2)+' м (масштабировано до 1,8 м) · объектов: '+countMeshes(root)+' · костей: '+bones.length+' · анимаций: '+g.animations.length+'.');
+ },undefined,err=>setStatus('Не удалось загрузить модель: '+(err?.message||err)+' · проверь интернет-соединение.'));
 });
 function countMeshes(o){let n=0;o.traverse(x=>{if(x.isMesh)n++});return n}
 function addSkeletons(){if(!root)return;root.traverse(o=>{if(o.isSkinnedMesh&&o.skeleton){const h=new THREE.SkeletonHelper(o);h.material.linewidth=2;scene.add(h);skeletonHelpers.push(h)}})}
