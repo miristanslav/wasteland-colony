@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#182126">
-<meta name="application-name" content="Wasteland Colony 0.0.33">
+<meta name="application-name" content="Wasteland Colony 0.0.35">
 <style>
 *{box-sizing:border-box}
 html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#111820;color:#eef2e8;font-family:system-ui,Arial;touch-action:none}
@@ -104,7 +104,7 @@ button:active{background:#607a7b;transform:scale(.97)}
 #rotateNotice{display:none;position:absolute;z-index:40;left:50%;top:10px;transform:translateX(-50%);max-width:90vw;padding:8px 12px;border-radius:9px;background:#17242bea;border:1px solid #9bad9b;color:#fff;font-size:12px;text-align:center;pointer-events:none}
 @media(orientation:portrait){#rotateNotice{display:block}}
 
-/* 0.0.34 — минимальный игровой HUD: больше пространства для обзора мира */
+/* 0.0.35 — минимальный игровой HUD: больше пространства для обзора мира */
 #topbar{left:7px;right:7px;top:7px;justify-content:center;pointer-events:none}
 #topbar .brand{display:none}
 #stats{padding:5px 10px;min-height:0;border-radius:20px;font-size:11px;line-height:1.25;white-space:nowrap;text-align:center;background:rgba(9,16,20,.62);border-color:rgba(180,200,195,.22);box-shadow:0 1px 5px #0004}
@@ -133,19 +133,36 @@ button:active{background:#607a7b;transform:scale(.97)}
  #stickKnob{width:34px;height:34px}
 }
 
+
+/* 0.0.35 — единая система игровых кнопок и экран паузы */
+#leftControls,#rightControls{top:8px;gap:7px;align-items:center}
+#leftControls button,#rightControls button,#actionButtons button{width:40px;height:40px;min-width:40px;min-height:40px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:12px;border:1px solid rgba(190,207,198,.48);background:linear-gradient(180deg,rgba(49,67,68,.94),rgba(24,38,41,.96));color:#f1eee1;font-family:system-ui,sans-serif;font-size:18px;font-weight:650;line-height:1;box-shadow:0 2px 7px rgba(0,0,0,.38)}
+#leftControls button:active,#rightControls button:active,#actionButtons button:active{transform:scale(.94);background:#667b70}
+#actionButtons{gap:7px}
+#actionButtons button{width:44px;height:44px;min-width:44px;min-height:44px;border-radius:13px;font-size:19px}
+#pauseButton{font-size:20px!important;letter-spacing:-2px}
+#pausePanel{position:absolute;inset:0;z-index:25;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(3,9,12,.68);backdrop-filter:blur(5px)}
+#pauseCard{width:min(330px,90vw);padding:22px;border-radius:17px;border:1px solid rgba(183,202,190,.48);background:linear-gradient(160deg,#1c2b2d,#101a20);box-shadow:0 16px 50px #000b;text-align:center}
+#pauseCard h2{margin:0 0 5px;font-size:25px;letter-spacing:1px}
+#pauseCard p{margin:0 0 17px;color:#b8c5bd;font-size:12px}
+#pauseCard button{display:block;width:100%;min-height:44px;margin-top:9px;border-radius:11px;font-size:13px}
+#pauseCard .menu-primary{background:linear-gradient(180deg,#637b56,#354b39);border-color:#a5bb91}
+#pauseExit{background:linear-gradient(180deg,#59413b,#382a28);border-color:#97766b}
+@media(max-width:520px){#leftControls,#rightControls{top:7px;gap:6px}#leftControls button,#rightControls button{width:36px;height:36px;min-width:36px;min-height:36px;border-radius:11px;font-size:16px}#actionButtons{gap:6px}#actionButtons button{width:40px;height:40px;min-width:40px;min-height:40px;border-radius:12px;font-size:17px}#pauseButton{font-size:18px!important}}
+
 </style>
 </head>
 <body>
 <canvas id="game" aria-label="Игровой мир"></canvas>
 <header id="topbar">
-  <div class="panel brand"><b>WASTELAND COLONY</b><small>Версия 0.0.34 · автономный запуск</small></div>
+  <div class="panel brand"><b>WASTELAND COLONY</b><small>Версия 0.0.35 · автономный запуск</small></div>
   <div class="panel" id="stats">Загрузка мира…</div>
 </header>
 <nav id="leftControls">
-  <button id="camReset" aria-label="К игроку" title="Вернуть камеру к игроку">⌖</button><button id="follow" aria-label="Режим камеры" title="Переключить слежение за игроком">◎</button><button id="fullscreen" aria-label="Полный экран" title="Полный экран">⛶</button>
+  <button id="follow" aria-label="Режим камеры" title="Переключить слежение за игроком">◎</button>
 </nav>
 <nav id="rightControls">
-  <button id="mapToggle" aria-label="Открыть карту" title="Карта">▦</button><button id="save" aria-label="Сохранить" title="Сохранить">↓</button><button id="load" aria-label="Загрузить" title="Загрузить">↑</button>
+  <button id="mapToggle" aria-label="Открыть карту" title="Карта">⌖</button><button id="pauseButton" aria-label="Пауза" title="Пауза">Ⅱ</button>
 </nav>
 <div id="instructions" class="panel">
   <b>Как управлять</b><span>1. Ты начинаешь один — без отряда и лагеря.</span><span>2. Нажми на землю или используй джойстик, чтобы двигаться.</span><span>3. Камера следует за персонажем. Нажми «Свободная камера», чтобы осматривать мир отдельно.</span><span>4. Красные фигуры — враждебные разбойники. Подойди и нажми «Атаковать».</span><span>5. Двумя пальцами вращай камеру вокруг путника; своди/разводи пальцы для масштаба. Карта — кнопка ▦.</span>
@@ -159,6 +176,7 @@ button:active{background:#607a7b;transform:scale(.97)}
   <div id="mapLegend">🌊 Океан · 💧 Реки · 🟩 Степи · 🟧 Пустыня · ⛰️ Горы · 🟦 Болота · 🟥 Мёртвые земли · ❄️ Северные пики</div>
 </div>
 
+<div id="pausePanel" class="panel" role="dialog" aria-modal="true" aria-label="Пауза" style="display:none"><div id="pauseCard"><h2>Пауза</h2><p>Путешествие приостановлено</p><button id="resumeGame" class="menu-primary">▶ Продолжить</button><button id="pauseSave">Сохранить прогресс</button><button id="pauseExit">Выйти в главное меню</button></div></div>
 <div id="rotateNotice">↻ Для комфортной игры поверни устройство горизонтально</div>
 <div id="mainMenu" role="dialog" aria-modal="true" aria-label="Главное меню">
  <div id="mainMenuCard">
@@ -167,7 +185,7 @@ button:active{background:#607a7b;transform:scale(.97)}
   <button id="newGame" class="menu-primary">Новая игра</button>
   <button id="menuContinue">Продолжить игру</button>
   <button id="menuFullscreen">⛶ Полный экран · горизонтальный режим</button>
-  <small>Версия 0.0.34 · браузерная игра</small>
+  <small>Версия 0.0.35 · браузерная игра</small>
  </div>
 </div>
 <div id="startScreen" role="dialog" aria-modal="true" aria-label="Выбор места появления">
@@ -425,7 +443,7 @@ function viewProjection(){
  return multiply(perspective(.92,canvas.width/canvas.height,.25,3000),lookAt(eye,target,V(0,1,0)));
 }
 function resize(){const vv=window.visualViewport,w=Math.max(1,Math.floor(vv?vv.width:document.documentElement.clientWidth||innerWidth)),h=Math.max(1,Math.floor(vv?vv.height:document.documentElement.clientHeight||innerHeight)),d=Math.min(devicePixelRatio||1,1.6);canvas.width=Math.max(1,Math.floor(w*d));canvas.height=Math.max(1,Math.floor(h*d));gl.viewport(0,0,canvas.width,canvas.height);}
-addEventListener('resize',resize);addEventListener('orientationchange',()=>setTimeout(resize,120));if(window.visualViewport)window.visualViewport.addEventListener('resize',resize);document.addEventListener('fullscreenchange',()=>{resize();const b=$('fullscreen');if(b)b.textContent=document.fullscreenElement?'⤢ Выйти из полного экрана':'⛶ Полный экран';});resize();
+addEventListener('resize',resize);addEventListener('orientationchange',()=>setTimeout(resize,120));if(window.visualViewport)window.visualViewport.addEventListener('resize',resize);document.addEventListener('fullscreenchange',resize);resize();
 function buildTerrain(){
  const verts=[], colors=[];
  const biomeColors={
@@ -721,7 +739,8 @@ base.addEventListener('pointerdown',e=>{e.preventDefault();joyPointer=e.pointerI
 base.addEventListener('pointermove',e=>{if(e.pointerId===joyPointer)joyUpdate(e);});
 function joyEnd(e){if(e.pointerId!==joyPointer)return;joyPointer=null;moveVector={x:0,y:0};knob.style.transform='translate(0,0)';}
 base.addEventListener('pointerup',joyEnd);base.addEventListener('pointercancel',joyEnd);
-function update(dt){if(!gameStarted)return;animTime+=dt;let moving=false;const speed=4.1;
+let gamePaused=false;
+function update(dt){if(!gameStarted||gamePaused)return;animTime+=dt;let moving=false;const speed=4.1;
  gameMinutes+=dt*3; if(gameMinutes>=1440){gameMinutes-=1440;dayCount++;} survivalTick+=dt; if(survivalTick>=5){const ticks=Math.floor(survivalTick/5);survivalTick%=5;squad.forEach(u=>{u.hunger=clamp(u.hunger+ticks*.75,0,100);const resting=(gameMinutes>=22*60||gameMinutes<6*60);if(resting)u.fatigue=clamp(u.fatigue-ticks*1.8,0,100);else if(u.task!=='idle')u.fatigue=clamp(u.fatigue+ticks*.55,0,100);else u.fatigue=clamp(u.fatigue-ticks*.25,0,100);if(u.hunger>=70&&resources.food>0){resources.food--;u.hunger=Math.max(0,u.hunger-48);} });updateUI();}
 if(Math.hypot(moveVector.x,moveVector.y)>.12){const movementYaw=camYawTarget;const forward=V(-Math.sin(movementYaw),0,-Math.cos(movementYaw)),right=V(Math.cos(movementYaw),0,-Math.sin(movementYaw));let dir=add(mul(right,moveVector.x),mul(forward,-moveVector.y));dir=norm(dir);const u=squad[0];u.target=null;const nx=clamp(u.p.x+dir.x*speed*dt,-WORLD+8,WORLD-8),nz=clamp(u.p.z+dir.z*speed*dt,-WORLD+8,WORLD-8);if(isLand(nx,nz)){u.p.x=nx;u.p.z=nz;u.p.y=surfaceHeight(nx,nz);u.targetFacing=Math.atan2(dir.x,-dir.z);moving=true;}}
 squad.forEach(u=>{if(!u.target)return;const d=sub(u.target,u.p);d.y=0;const l=Math.hypot(d.x,d.z);if(l<.12){u.target=null;if(u.task==='gather'&&u.targetObject){const o=u.targetObject;if(objects.includes(o)){if(o.type==='tree'){resources.wood+=2;message='Путник добыл 2 единицы дерева.';}else{resources.stone+=1;message='Путник добыл 1 единицу камня.';}objects.splice(objects.indexOf(o),1);}u.targetObject=null;}else if(u.task!=='rest')u.task='idle';updateUI();return;}const step=Math.min(l,3.2*dt),nx=clamp(u.p.x+d.x/l*step,-WORLD+8,WORLD-8),nz=clamp(u.p.z+d.z/l*step,-WORLD+8,WORLD-8);if(isLand(nx,nz)){u.p.x=nx;u.p.z=nz;u.p.y=surfaceHeight(nx,nz);u.targetFacing=Math.atan2(d.x,-d.z);}else u.target=null;});
@@ -744,14 +763,19 @@ $('newGame').onclick=async()=>{await enterLandscape();$('mainMenu').style.displa
 $('menuContinue').onclick=async()=>{await enterLandscape();load();};
 $('menuFullscreen').onclick=enterLandscape;
 $('backToMenu').onclick=()=>{$('startScreen').style.display='none';$('mainMenu').style.display='flex';};
-$('fullscreen').onclick=async()=>{try{if(document.fullscreenElement){await document.exitFullscreen();}else{await enterLandscape();}}catch(e){document.documentElement.classList.toggle('immersive-mode');resize();$('fullscreen').textContent=document.documentElement.classList.contains('immersive-mode')?'⤢ Обычный режим':'⛶ Полный экран';}};
-$('camReset').onclick=()=>{cam.x=squad[0].p.x;cam.z=squad[0].p.z;follow=true;camYawTarget=cam.yaw;clampCamera();updateUI();};
+function openPause(){if(!gameStarted)return;gamePaused=true;moveVector={x:0,y:0};knob.style.transform='translate(0,0)';$('pausePanel').style.display='flex';$('pauseSave').textContent='Сохранить прогресс';}
+function closePause(){$('pausePanel').style.display='none';gamePaused=false;last=performance.now();}
+$('pauseButton').onclick=openPause;
+$('resumeGame').onclick=closePause;
+$('pauseSave').onclick=()=>{save();$('pauseSave').textContent='✓ Сохранено';};
+$('pauseExit').onclick=()=>{save();closePause();gameStarted=false;$('pausePanel').style.display='none';$('mainMenu').style.display='flex';$('startScreen').style.display='none';try{if(localStorage.getItem('wasteland_colony_save'))$('menuContinue').style.display='block';}catch(e){}};
+/* Кнопка возврата камеры убрана из HUD. */
 $('follow').onclick=()=>{follow=!follow;if(follow){cam.x=squad[0].p.x;cam.z=squad[0].p.z;}camYawTarget=cam.yaw;updateUI();};
 $('stop').onclick=()=>{const u=squad[0];u.target=null;u.task='idle';message='Ты остановился.';updateUI();};
 $('gather').onclick=()=>{const u=squad[0];let nearest=null,best=1e9;objects.forEach(o=>{const d=Math.hypot(o.x-u.p.x,o.z-u.p.z);if(d<best){best=d;nearest=o;}});if(nearest){u.target=V(nearest.x,surfaceHeight(nearest.x,nearest.z),nearest.z);u.task='gather';u.targetObject=nearest;message=nearest.type==='tree'?'Путник идёт добывать дерево.':'Путник идёт добывать камень.';}updateUI();};
 $('attack').onclick=()=>{const u=squad[0];let target=null,best=3.8;for(const r of raiders)if(r.alive){const d=Math.hypot(r.p.x-u.p.x,r.p.z-u.p.z);if(d<best){best=d;target=r;}}if(!target){message='Враг слишком далеко. Подойди ближе.';}else if(combatCooldown<=0){target.hp-=25;combatCooldown=.7;message=target.hp<=0?'Разбойник повержен. Ты обыскал его и нашёл припасы.':'Путник атаковал разбойника!';if(target.hp<=0){target.alive=false;resources.food+=2;}}updateUI();};
-function save(){const data={version:'0.0.34',startRegionId,squad:squad.map(u=>({p:u.p,name:u.name,hunger:u.hunger,fatigue:u.fatigue})),cam,resources,gameMinutes,dayCount,berryBushes,scoutHealth,raiders};try{localStorage.setItem('wasteland_colony_save',JSON.stringify(data));message='Сохранено на этом устройстве.';}catch(e){message='Браузер запретил локальное сохранение для file://. Игра продолжит работать.';}updateUI();}
-function load(){try{const d=JSON.parse(localStorage.getItem('wasteland_colony_save')||'null');if(!d)throw Error();startRegionId=d.startRegionId||'plains';d.squad.forEach((u,i)=>{if(squad[i]){let px=clamp(u.p.x,-WORLD+8,WORLD-8),pz=clamp(u.p.z,-WORLD+8,WORLD-8);if(!isLand(px,pz)){px=squad[0].p.x;pz=squad[0].p.z;}squad[i].p=V(px,surfaceHeight(px,pz),pz);squad[i].target=null;if(Number.isFinite(u.hunger))squad[i].hunger=u.hunger;if(Number.isFinite(u.fatigue))squad[i].fatigue=u.fatigue;}});if(d.cam)cam={...cam,...d.cam,x:Number(d.cam.x)||0,z:Number(d.cam.z)||0,dist:clamp(Number(d.cam.dist)||32,3.5,390)};clampCamera();camYawTarget=cam.yaw;resources={...resources,...(d.resources||{})};if(Number.isFinite(d.gameMinutes))gameMinutes=d.gameMinutes;if(Number.isFinite(d.dayCount))dayCount=d.dayCount;if(Array.isArray(d.berryBushes))d.berryBushes.forEach((b,i)=>{if(berryBushes[i])berryBushes[i].berries=clamp(Number(b.berries)||0,0,3);});if(Number.isFinite(d.scoutHealth))scoutHealth=clamp(d.scoutHealth,0,100);if(Array.isArray(d.raiders))d.raiders.forEach((r,i)=>{if(raiders[i]){raiders[i].hp=clamp(Number(r.hp)||0,0,60);raiders[i].alive=!!r.alive;raiders[i].p=V(r.p.x,0,r.p.z);}});gameStarted=true;$('startScreen').style.display='none';$('mainMenu').style.display='none';follow=true;cam.x=squad[0].p.x;cam.z=squad[0].p.z;message='Сохранение загружено.';}catch(e){message='Сохранение не найдено или повреждено.';}updateUI();}
+function save(){const data={version:'0.0.35',startRegionId,squad:squad.map(u=>({p:u.p,name:u.name,hunger:u.hunger,fatigue:u.fatigue})),cam,resources,gameMinutes,dayCount,berryBushes,scoutHealth,raiders};try{localStorage.setItem('wasteland_colony_save',JSON.stringify(data));message='Сохранено на этом устройстве.';}catch(e){message='Браузер запретил локальное сохранение для file://. Игра продолжит работать.';}updateUI();}
+function load(){try{const d=JSON.parse(localStorage.getItem('wasteland_colony_save')||'null');if(!d)throw Error();startRegionId=d.startRegionId||'plains';d.squad.forEach((u,i)=>{if(squad[i]){let px=clamp(u.p.x,-WORLD+8,WORLD-8),pz=clamp(u.p.z,-WORLD+8,WORLD-8);if(!isLand(px,pz)){px=squad[0].p.x;pz=squad[0].p.z;}squad[i].p=V(px,surfaceHeight(px,pz),pz);squad[i].target=null;if(Number.isFinite(u.hunger))squad[i].hunger=u.hunger;if(Number.isFinite(u.fatigue))squad[i].fatigue=u.fatigue;}});if(d.cam)cam={...cam,...d.cam,x:Number(d.cam.x)||0,z:Number(d.cam.z)||0,dist:clamp(Number(d.cam.dist)||32,3.5,390)};clampCamera();camYawTarget=cam.yaw;resources={...resources,...(d.resources||{})};if(Number.isFinite(d.gameMinutes))gameMinutes=d.gameMinutes;if(Number.isFinite(d.dayCount))dayCount=d.dayCount;if(Array.isArray(d.berryBushes))d.berryBushes.forEach((b,i)=>{if(berryBushes[i])berryBushes[i].berries=clamp(Number(b.berries)||0,0,3);});if(Number.isFinite(d.scoutHealth))scoutHealth=clamp(d.scoutHealth,0,100);if(Array.isArray(d.raiders))d.raiders.forEach((r,i)=>{if(raiders[i]){raiders[i].hp=clamp(Number(r.hp)||0,0,60);raiders[i].alive=!!r.alive;raiders[i].p=V(r.p.x,0,r.p.z);}});gameStarted=true;gamePaused=false;$('pausePanel').style.display='none';$('startScreen').style.display='none';$('mainMenu').style.display='none';follow=true;cam.x=squad[0].p.x;cam.z=squad[0].p.z;message='Сохранение загружено.';}catch(e){message='Сохранение не найдено или повреждено.';}updateUI();}
 function traceCoastPath(ctx,mapScale,ox=0,oy=0){
  ctx.beginPath();
  for(let i=0;i<=720;i++){
@@ -800,7 +824,7 @@ $('mapToggle').onclick=()=>showMap($('mapPanel').style.display!=='flex');
 $('mapClose').onclick=()=>showMap(false);
 function startGame(id){
  const region=startRegions.find(r=>r.id===id);if(!region)return;
- startRegionId=id;gameStarted=true;
+ startRegionId=id;gameStarted=true;gamePaused=false;$("pausePanel").style.display="none";
  const u=squad[0];u.p=V(region.x,surfaceHeight(region.x,region.z),region.z);u.target=null;u.task='idle';u.hunger=region.hunger;u.fatigue=region.fatigue;
  resources={wood:region.wood,stone:region.stone,food:region.food};scoutHealth=region.health;cam={x:region.x,z:region.z,yaw:0,pitch:.72,dist:32};camYawTarget=cam.yaw;follow=true;clampCamera();
  $('startScreen').style.display='none';$('mainMenu').style.display='none';message='Ты высадился один: '+region.name+'. Сложность: '+region.difficulty+'. Исследуй местность и найди припасы.';updateUI();
@@ -808,7 +832,7 @@ function startGame(id){
 document.querySelectorAll('[data-start]').forEach(b=>b.addEventListener('click',()=>startGame(b.dataset.start)));
 try{if(localStorage.getItem('wasteland_colony_save')){$('menuContinue').style.display='block';$('continueSave').style.display='block';}}catch(e){}
 $('continueSave').onclick=load;
-$('save').onclick=save;$('load').onclick=load;drawStartPreview();updateUI();
+drawStartPreview();updateUI();
 window.addEventListener('error',e=>{const m=$('message');if(m)m.textContent='Ошибка игры: '+(e.message||'неизвестная ошибка');});
 })();
 
