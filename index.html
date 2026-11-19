@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#182126">
-<meta name="application-name" content="Wasteland Colony 0.0.31">
+<meta name="application-name" content="Wasteland Colony 0.0.32">
 <style>
 *{box-sizing:border-box}
 html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#111820;color:#eef2e8;font-family:system-ui,Arial;touch-action:none}
@@ -108,7 +108,7 @@ button:active{background:#607a7b;transform:scale(.97)}
 <body>
 <canvas id="game" aria-label="Игровой мир"></canvas>
 <header id="topbar">
-  <div class="panel brand"><b>WASTELAND COLONY</b><small>Версия 0.0.31 · автономный запуск</small></div>
+  <div class="panel brand"><b>WASTELAND COLONY</b><small>Версия 0.0.32 · автономный запуск</small></div>
   <div class="panel" id="stats">Загрузка мира…</div>
 </header>
 <nav id="leftControls">
@@ -137,7 +137,7 @@ button:active{background:#607a7b;transform:scale(.97)}
   <button id="newGame" class="menu-primary">Новая игра</button>
   <button id="menuContinue">Продолжить игру</button>
   <button id="menuFullscreen">⛶ Полный экран · горизонтальный режим</button>
-  <small>Версия 0.0.31 · браузерная игра</small>
+  <small>Версия 0.0.32 · браузерная игра</small>
  </div>
 </div>
 <div id="startScreen" role="dialog" aria-modal="true" aria-label="Выбор места появления">
@@ -167,7 +167,7 @@ const V=(x=0,y=0,z=0)=>({x,y,z}), add=(a,b)=>V(a.x+b.x,a.y+b.y,a.z+b.z), sub=(a,
 const length=a=>Math.hypot(a.x,a.y,a.z), norm=a=>mul(a,1/(length(a)||1)), clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 let cam={x:0,z:0,yaw:0,pitch:.72,dist:32},follow=true,formation=0;let camYawTarget=cam.yaw;
 const CAMERA_ROTATION_SENSITIVITY=.0026,CAMERA_TWIST_SENSITIVITY=.38,CAMERA_ROTATION_SMOOTHING=6.2,CAMERA_FOLLOW_SMOOTHING=5.2;
-function clampCamera(){if(!Number.isFinite(cam.x))cam.x=0;if(!Number.isFinite(cam.z))cam.z=0;if(!Number.isFinite(cam.yaw))cam.yaw=0;if(!Number.isFinite(cam.pitch))cam.pitch=.72;if(!Number.isFinite(cam.dist))cam.dist=32;cam.dist=clamp(cam.dist,7,390);const margin=Math.max(12,cam.dist*.72);cam.x=clamp(cam.x,-WORLD+margin,WORLD-margin);cam.z=clamp(cam.z,-WORLD+margin,WORLD-margin);cam.pitch=clamp(cam.pitch,.16,1.18);}
+function clampCamera(){if(!Number.isFinite(cam.x))cam.x=0;if(!Number.isFinite(cam.z))cam.z=0;if(!Number.isFinite(cam.yaw))cam.yaw=0;if(!Number.isFinite(cam.pitch))cam.pitch=.72;if(!Number.isFinite(cam.dist))cam.dist=32;cam.dist=clamp(cam.dist,3.5,390);const margin=Math.max(12,cam.dist*.72);cam.x=clamp(cam.x,-WORLD+margin,WORLD-margin);cam.z=clamp(cam.z,-WORLD+margin,WORLD-margin);cam.pitch=clamp(cam.pitch,.08,1.18);}
 let resources={wood:0,stone:0,food:6},message='Ты один в открытом мире. Исследуй окрестности и добывай припасы.';
 let scoutHealth=100,combatCooldown=0;
 let gameMinutes=8*60,survivalTick=0,dayCount=1,animTime=0;
@@ -389,7 +389,7 @@ function viewProjection(){
  const eyeX=cam.x+sy*cam.dist*cp, eyeZ=cam.z+cy*cam.dist*cp;
  let eyeY=target.y+cam.dist*Math.sin(cam.pitch);
  // Не позволяем камере проходить сквозь горы/склоны при панорамировании.
- const clearance=surfaceHeight(eyeX,eyeZ)+1.7;
+ const clearance=surfaceHeight(eyeX,eyeZ)+1.0;
  if(eyeY<clearance)eyeY=clearance;
  const eye=V(eyeX,eyeY,eyeZ);
  return multiply(perspective(.92,canvas.width/canvas.height,.25,3000),lookAt(eye,target,V(0,1,0)));
@@ -609,7 +609,7 @@ canvas.addEventListener('pointermove',e=>{
   if(!cameraGesture||!cameraGesture.pinch)cameraGesture={pinch:true,moved:true,lastDist:pair.dist,lastAngle:pair.angle};
   else{
    // Масштаб и вращение работают одновременно. Угол меняется плавно через camYawTarget.
-   cam.dist=clamp(cam.dist*cameraGesture.lastDist/Math.max(1,pair.dist),7,390);
+   cam.dist=clamp(cam.dist*cameraGesture.lastDist/Math.max(1,pair.dist),3.5,390);
    const twist=angleDelta(pair.angle,cameraGesture.lastAngle);
    if(Math.abs(twist)>.0001)camYawTarget-=twist*CAMERA_TWIST_SENSITIVITY;
    cameraGesture.lastDist=pair.dist;cameraGesture.lastAngle=pair.angle;
@@ -621,7 +621,7 @@ canvas.addEventListener('pointermove',e=>{
  const totalDx=e.clientX-cameraGesture.x,totalDy=e.clientY-cameraGesture.y,dx=e.clientX-cameraGesture.lastX,dy=e.clientY-cameraGesture.lastY;
  cameraGesture.lastX=e.clientX;cameraGesture.lastY=e.clientY;
  if(Math.hypot(totalDx,totalDy)>6)cameraGesture.moved=true;
- if(follow){camYawTarget-=dx*CAMERA_ROTATION_SENSITIVITY;cam.pitch=clamp(cam.pitch+dy*.00135,.16,1.12);}
+ if(follow){camYawTarget-=dx*CAMERA_ROTATION_SENSITIVITY;cam.pitch=clamp(cam.pitch+dy*.00135,.08,1.12);}
  else{const pitchScale=1/Math.max(.42,Math.cos(cam.pitch));const scale=cam.dist/Math.max(320,canvas.clientHeight)*.82*pitchScale,c=Math.cos(cam.yaw),ss=Math.sin(cam.yaw);cam.x=cameraGesture.cx+(-totalDx*c+totalDy*ss)*scale;cam.z=cameraGesture.cz+(-totalDx*ss-totalDy*c)*scale;clampCamera();}
 });
 canvas.addEventListener('pointerup',e=>{
@@ -665,8 +665,8 @@ $('follow').onclick=()=>{follow=!follow;if(follow){cam.x=squad[0].p.x;cam.z=squa
 $('stop').onclick=()=>{const u=squad[0];u.target=null;u.task='idle';message='Ты остановился.';updateUI();};
 $('gather').onclick=()=>{const u=squad[0];let nearest=null,best=1e9;objects.forEach(o=>{const d=Math.hypot(o.x-u.p.x,o.z-u.p.z);if(d<best){best=d;nearest=o;}});if(nearest){u.target=V(nearest.x,surfaceHeight(nearest.x,nearest.z),nearest.z);u.task='gather';u.targetObject=nearest;message=nearest.type==='tree'?'Путник идёт добывать дерево.':'Путник идёт добывать камень.';}updateUI();};
 $('attack').onclick=()=>{const u=squad[0];let target=null,best=3.8;for(const r of raiders)if(r.alive){const d=Math.hypot(r.p.x-u.p.x,r.p.z-u.p.z);if(d<best){best=d;target=r;}}if(!target){message='Враг слишком далеко. Подойди ближе.';}else if(combatCooldown<=0){target.hp-=25;combatCooldown=.7;message=target.hp<=0?'Разбойник повержен. Ты обыскал его и нашёл припасы.':'Путник атаковал разбойника!';if(target.hp<=0){target.alive=false;resources.food+=2;}}updateUI();};
-function save(){const data={version:'0.0.31',startRegionId,squad:squad.map(u=>({p:u.p,name:u.name,hunger:u.hunger,fatigue:u.fatigue})),cam,resources,gameMinutes,dayCount,berryBushes,scoutHealth,raiders};try{localStorage.setItem('wasteland_colony_save',JSON.stringify(data));message='Сохранено на этом устройстве.';}catch(e){message='Браузер запретил локальное сохранение для file://. Игра продолжит работать.';}updateUI();}
-function load(){try{const d=JSON.parse(localStorage.getItem('wasteland_colony_save')||'null');if(!d)throw Error();startRegionId=d.startRegionId||'plains';d.squad.forEach((u,i)=>{if(squad[i]){let px=clamp(u.p.x,-WORLD+8,WORLD-8),pz=clamp(u.p.z,-WORLD+8,WORLD-8);if(!isLand(px,pz)){px=squad[0].p.x;pz=squad[0].p.z;}squad[i].p=V(px,surfaceHeight(px,pz),pz);squad[i].target=null;if(Number.isFinite(u.hunger))squad[i].hunger=u.hunger;if(Number.isFinite(u.fatigue))squad[i].fatigue=u.fatigue;}});if(d.cam)cam={...cam,...d.cam,x:Number(d.cam.x)||0,z:Number(d.cam.z)||0,dist:clamp(Number(d.cam.dist)||32,7,390)};clampCamera();camYawTarget=cam.yaw;resources={...resources,...(d.resources||{})};if(Number.isFinite(d.gameMinutes))gameMinutes=d.gameMinutes;if(Number.isFinite(d.dayCount))dayCount=d.dayCount;if(Array.isArray(d.berryBushes))d.berryBushes.forEach((b,i)=>{if(berryBushes[i])berryBushes[i].berries=clamp(Number(b.berries)||0,0,3);});if(Number.isFinite(d.scoutHealth))scoutHealth=clamp(d.scoutHealth,0,100);if(Array.isArray(d.raiders))d.raiders.forEach((r,i)=>{if(raiders[i]){raiders[i].hp=clamp(Number(r.hp)||0,0,60);raiders[i].alive=!!r.alive;raiders[i].p=V(r.p.x,0,r.p.z);}});gameStarted=true;$('startScreen').style.display='none';$('mainMenu').style.display='none';follow=true;cam.x=squad[0].p.x;cam.z=squad[0].p.z;message='Сохранение загружено.';}catch(e){message='Сохранение не найдено или повреждено.';}updateUI();}
+function save(){const data={version:'0.0.32',startRegionId,squad:squad.map(u=>({p:u.p,name:u.name,hunger:u.hunger,fatigue:u.fatigue})),cam,resources,gameMinutes,dayCount,berryBushes,scoutHealth,raiders};try{localStorage.setItem('wasteland_colony_save',JSON.stringify(data));message='Сохранено на этом устройстве.';}catch(e){message='Браузер запретил локальное сохранение для file://. Игра продолжит работать.';}updateUI();}
+function load(){try{const d=JSON.parse(localStorage.getItem('wasteland_colony_save')||'null');if(!d)throw Error();startRegionId=d.startRegionId||'plains';d.squad.forEach((u,i)=>{if(squad[i]){let px=clamp(u.p.x,-WORLD+8,WORLD-8),pz=clamp(u.p.z,-WORLD+8,WORLD-8);if(!isLand(px,pz)){px=squad[0].p.x;pz=squad[0].p.z;}squad[i].p=V(px,surfaceHeight(px,pz),pz);squad[i].target=null;if(Number.isFinite(u.hunger))squad[i].hunger=u.hunger;if(Number.isFinite(u.fatigue))squad[i].fatigue=u.fatigue;}});if(d.cam)cam={...cam,...d.cam,x:Number(d.cam.x)||0,z:Number(d.cam.z)||0,dist:clamp(Number(d.cam.dist)||32,3.5,390)};clampCamera();camYawTarget=cam.yaw;resources={...resources,...(d.resources||{})};if(Number.isFinite(d.gameMinutes))gameMinutes=d.gameMinutes;if(Number.isFinite(d.dayCount))dayCount=d.dayCount;if(Array.isArray(d.berryBushes))d.berryBushes.forEach((b,i)=>{if(berryBushes[i])berryBushes[i].berries=clamp(Number(b.berries)||0,0,3);});if(Number.isFinite(d.scoutHealth))scoutHealth=clamp(d.scoutHealth,0,100);if(Array.isArray(d.raiders))d.raiders.forEach((r,i)=>{if(raiders[i]){raiders[i].hp=clamp(Number(r.hp)||0,0,60);raiders[i].alive=!!r.alive;raiders[i].p=V(r.p.x,0,r.p.z);}});gameStarted=true;$('startScreen').style.display='none';$('mainMenu').style.display='none';follow=true;cam.x=squad[0].p.x;cam.z=squad[0].p.z;message='Сохранение загружено.';}catch(e){message='Сохранение не найдено или повреждено.';}updateUI();}
 function traceCoastPath(ctx,mapScale,ox=0,oy=0){
  ctx.beginPath();
  for(let i=0;i<=720;i++){
