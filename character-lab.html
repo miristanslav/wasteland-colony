@@ -2,7 +2,7 @@
 <html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>Wasteland Colony — Character Lab</title>
 <style>
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#151a1d;color:#e8e5dc;font:14px system-ui}canvas{width:100%;height:100%;display:block;touch-action:none}#panel{position:fixed;left:12px;top:12px;z-index:2;background:#171d20dd;border:1px solid #59605a;border-radius:10px;padding:10px;max-width:calc(100% - 24px)}#panel b{display:block;margin-bottom:6px}button{background:#333d3e;color:#eee;border:1px solid #68716b;border-radius:7px;padding:8px 11px;margin:3px}small{display:block;color:#b8b8ad;margin-top:5px}
-</style></head><body><div id="panel"><b>Character Lab · прототип анатомии</b><button id="idle">Стойка</button><button id="walk">Ходьба</button><button id="front">Спереди</button><button id="side">Сбоку</button><button id="back">Сзади</button><small>Вращай модель одним пальцем. Приближение — двумя пальцами или колёсиком.</small></div><canvas id="view"></canvas>
+</style></head><body><div id="panel"><b>Character Lab · анатомия v2</b><button id="idle">Стойка</button><button id="walk">Ходьба</button><button id="front">Спереди</button><button id="side">Сбоку</button><button id="back">Сзади</button><small>Вращение — одним пальцем. Приближение — колёсиком. Проверяй лицо, силуэт и экипировку с разных сторон.</small></div><canvas id="view"></canvas>
 <script>
 (()=>{'use strict';
 const canvas=document.getElementById('view'),gl=canvas.getContext('webgl',{antialias:true});if(!gl){document.body.innerHTML='WebGL недоступен';return}
@@ -26,20 +26,70 @@ const limbCache=new Map();function limb(a,b,r1,r2,key,sides=8){let v=[],n=[],d=n
 function draw(m,model,color,vp){gl.bindBuffer(gl.ARRAY_BUFFER,m.b);gl.enableVertexAttribArray(ap);gl.vertexAttribPointer(ap,3,gl.FLOAT,false,0,0);gl.bindBuffer(gl.ARRAY_BUFFER,m.nb);gl.enableVertexAttribArray(an);gl.vertexAttribPointer(an,3,gl.FLOAT,false,0,0);gl.uniformMatrix4fv(uModel,false,model);gl.uniformMatrix4fv(um,false,mul(vp,model));gl.uniform3fv(uc,color);gl.drawArrays(gl.TRIANGLES,0,m.count)}
 function transform(x,y,z,sx,sy,sz){let m=I();m[0]=sx;m[5]=sy;m[10]=sz;m[12]=x;m[13]=y;m[14]=z;return m}
 function sphere(x,y,z,sx,sy,sz,color,vp){draw(torso,transform(x,y,z,sx,sy,sz),color,vp)}
-let yaw=.55,pitch=.13,dist=4.3,walking=false,t=0,last=0,drag=null;
+function uvSphere(lat=10,lon=12){let v=[],n=[];for(let y=0;y<lat;y++){let a=y/lat*Math.PI,b=(y+1)/lat*Math.PI;for(let x=0;x<lon;x++){let c=x/lon*Math.PI*2,d=(x+1)/lon*Math.PI*2;let pt=(p,q)=>[Math.sin(p)*Math.cos(q),Math.cos(p),Math.sin(p)*Math.sin(q)];let p0=pt(a,c),p1=pt(b,c),p2=pt(b,d),p3=pt(a,d);for(let p of [p0,p1,p2,p0,p2,p3]){v.push(...p);n.push(...p)}}}return mesh(v,n)}
+const ball=uvSphere(10,12);
+function ellipsoid(x,y,z,sx,sy,sz,color,vp){draw(ball,transform(x,y,z,sx,sy,sz),color,vp)}
+
+let yaw=0,pitch=.08,dist=4.0,walking=false,t=0,last=0,drag=null;
 function frame(ms){let dt=Math.min(.04,(ms-last)/1000||0);last=ms;t+=dt;let w=canvas.clientWidth,h=canvas.clientHeight,dpr=Math.min(2,devicePixelRatio||1);if(canvas.width!==Math.round(w*dpr)||canvas.height!==Math.round(h*dpr)){canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr)}gl.viewport(0,0,canvas.width,canvas.height);gl.enable(gl.DEPTH_TEST);gl.clearColor(.10,.12,.12,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
 let eye=[Math.sin(yaw)*Math.cos(pitch)*dist,1.1+Math.sin(pitch)*dist,Math.cos(yaw)*Math.cos(pitch)*dist],vp=mul(perspective(.78,canvas.width/canvas.height,.1,80),look(eye,[0,.9,0]));
 draw(ground,I(),[.20,.22,.19],vp);
 let phase=walking?t*5:0,sw=Math.sin(phase)*.25,op=walking?Math.abs(Math.cos(phase))*.025:0;
-draw(pelvis,transform(0,0,0,1,1,1),[.22,.20,.16],vp);draw(torso,transform(0,0,0,1,1,1),[.29,.31,.29],vp);draw(head,transform(0,0,0,1,1,1),[.48,.34,.25],vp);
-// Neck, shoulders and articulated limbs. Segment endpoints are recomputed each frame, so joints remain connected.
-draw(limb([0,1.31,0],[0,1.42,0],.09,.085,'neck'),I(),[.40,.29,.22],vp);
+// Core silhouette: broad rib cage, tapered waist, pelvis and a deliberately smaller head.
+draw(pelvis,transform(0,0,0,1,1,1),[.25,.22,.18],vp);
+draw(torso,transform(0,0,0,1,1,1),[.36,.34,.29],vp);
+draw(head,transform(0,0,0,1,1,1),[.48,.35,.27],vp);
+// Neck and anatomical transitions.
+draw(limb([0,1.31,0],[0,1.44,0],.085,.078,'neck'),I(),[.43,.31,.24],vp);
+ellipsoid(0,1.29,.015,.31,.105,.17,[.34,.32,.27],vp); // collar/upper chest
+// Face is oriented toward +Z: brow ridge, eye sockets, nose bridge, cheek planes and jaw.
+ellipsoid(-.057,1.595,.125,.036,.023,.018,[.19,.16,.13],vp);
+ellipsoid(.057,1.595,.125,.036,.023,.018,[.19,.16,.13],vp);
+ellipsoid(-.057,1.594,.143,.012,.010,.008,[.78,.68,.51],vp);
+ellipsoid(.057,1.594,.143,.012,.010,.008,[.78,.68,.51],vp);
+ellipsoid(0,1.555,.153,.026,.058,.035,[.45,.31,.23],vp);
+ellipsoid(0,1.505,.165,.037,.022,.026,[.42,.28,.21],vp);
+ellipsoid(0,1.465,.136,.072,.027,.018,[.30,.19,.15],vp);
+ellipsoid(-.145,1.555,.005,.025,.047,.022,[.43,.30,.23],vp);
+ellipsoid(.145,1.555,.005,.025,.047,.022,[.43,.30,.23],vp);
+// Hair cap and rough swept-back hair mass.
+ellipsoid(0,1.70,-.006,.139,.078,.137,[.16,.15,.13],vp);
+ellipsoid(0,1.665,-.105,.125,.055,.105,[.15,.14,.12],vp);
+// Clothing: worn sleeveless tunic, leather belt, central fastening and asymmetric scavenged plates.
+ellipsoid(0,1.12,.185,.255,.19,.035,[.29,.28,.23],vp);
+ellipsoid(0,.94,.174,.235,.095,.032,[.25,.23,.19],vp);
+ellipsoid(0,.91,.211,.048,.035,.018,[.58,.46,.29],vp);
+ellipsoid(-.19,1.02,.185,.065,.095,.025,[.20,.19,.16],vp);
+ellipsoid(.19,1.02,.185,.065,.095,.025,[.20,.19,.16],vp);
+ellipsoid(-.30,1.24,.055,.16,.12,.15,[.34,.33,.28],vp);
+ellipsoid(-.30,1.24,.18,.145,.105,.055,[.43,.41,.34],vp);
+ellipsoid(-.30,1.24,.22,.09,.018,.012,[.24,.23,.20],vp);
+// Shoulder and chest strap crossing the torso.
+draw(limb([-.22,1.30,.205],[.17,.94,.205],.035,.035,'cross-strap'),I(),[.18,.16,.13],vp);
+ellipsoid(.16,1.03,.222,.055,.07,.025,[.43,.35,.24],vp);
+// Back roll and bedroll straps.
+draw(limb([0,1.17,-.19],[0,.91,-.19],.115,.115,'bedroll'),I(),[.19,.15,.10],vp);
+draw(limb([-.12,1.10,-.22],[.12,1.10,-.22],.018,.018,'bedroll-strap'),I(),[.47,.38,.25],vp);
 for(let s of [-1,1]){
  let hip=[s*.145,.72,0],knee=[s*.15,.39,sw*s*.38],ankle=[s*.15,.13,sw*s],toe=[s*.15,.08,-.13+sw*s];
- draw(limb(hip,knee,.115,.085,'leg-upper-'+s),I(),[.23,.23,.20],vp);draw(limb(knee,ankle,.082,.065,'leg-lower-'+s),I(),[.24,.23,.20],vp);draw(limb(ankle,toe,.085,.10,'foot-'+s),I(),[.17,.12,.08],vp);
+ draw(limb(hip,knee,.112,.083,'leg-upper-'+s),I(),[.34,.30,.24],vp);
+ draw(limb(knee,ankle,.078,.060,'leg-lower-'+s),I(),[.31,.28,.23],vp);
+ ellipsoid(knee[0],knee[1],knee[2]+.035,.083,.075,.055,[.38,.35,.29],vp);
+ draw(limb(ankle,toe,.085,.10,'foot-'+s),I(),[.17,.13,.09],vp);
+ // Shin wraps, boot cuffs and toe caps.
+ ellipsoid(s*.15,.20,sw*s,.078,.045,.075,[.24,.22,.18],vp);
+ ellipsoid(s*.15,.105,-.09+sw*s,.095,.055,.14,[.20,.16,.12],vp);
  let shoulder=[s*.34,1.23,0],elbow=[s*.39,.98,sw*s*.42],hand=[s*.39,.73,sw*s*.75];
- draw(limb([s*.25,1.29,0],shoulder,.15,.13,'shoulder-'+s),I(),[.29,.31,.29],vp);draw(limb(shoulder,elbow,.105,.075,'arm-upper-'+s),I(),[.27,.28,.25],vp);draw(limb(elbow,hand,.075,.055,'arm-lower-'+s),I(),[.44,.32,.24],vp);
- draw(limb([s*.39,.74,sw*s*.75],[s*.39,.66,sw*s*.75-.05],.06,.045,'hand-'+s),I(),[.37,.25,.18],vp);
+ draw(limb([s*.25,1.29,0],shoulder,.145,.12,'shoulder-'+s),I(),[.40,.36,.29],vp);
+ ellipsoid(shoulder[0],shoulder[1],shoulder[2],.115,.12,.115,[.41,.37,.30],vp);
+ draw(limb(shoulder,elbow,.096,.071,'arm-upper-'+s),I(),[.43,.37,.29],vp);
+ ellipsoid(elbow[0],elbow[1],elbow[2],.071,.068,.068,[.43,.36,.28],vp);
+ draw(limb(elbow,hand,.071,.052,'arm-lower-'+s),I(),[.40,.34,.27],vp);
+ ellipsoid(hand[0],hand[1]-.025,hand[2],.061,.052,.048,[.43,.31,.23],vp);
+ draw(limb([s*.39,.74,sw*s*.75],[s*.39,.66,sw*s*.75-.05],.055,.04,'hand-'+s),I(),[.36,.25,.18],vp);
+ // Leather bracer and small utility pouch.
+ ellipsoid(s*.39,.84,sw*s*.48,.078,.10,.076,[.25,.23,.19],vp);
+ ellipsoid(s*.25,.88,.13,.075,.08,.06,[.28,.23,.17],vp);
 }
 // Simple asymmetric scavenged shoulder plate and back roll.
 draw(limb([-.39,1.29,.02],[-.20,1.37,.02],.17,.12,'shoulder-armor'),I(),[.36,.35,.30],vp);
