@@ -103,26 +103,56 @@ button:active{background:#607a7b;transform:scale(.97)}
 #startScreen{display:none}
 #rotateNotice{display:none;position:absolute;z-index:40;left:50%;top:10px;transform:translateX(-50%);max-width:90vw;padding:8px 12px;border-radius:9px;background:#17242bea;border:1px solid #9bad9b;color:#fff;font-size:12px;text-align:center;pointer-events:none}
 @media(orientation:portrait){#rotateNotice{display:block}}
+
+/* 0.0.34 — минимальный игровой HUD: больше пространства для обзора мира */
+#topbar{left:7px;right:7px;top:7px;justify-content:center;pointer-events:none}
+#topbar .brand{display:none}
+#stats{padding:5px 10px;min-height:0;border-radius:20px;font-size:11px;line-height:1.25;white-space:nowrap;text-align:center;background:rgba(9,16,20,.62);border-color:rgba(180,200,195,.22);box-shadow:0 1px 5px #0004}
+#leftControls,#rightControls{top:7px;display:flex;flex-direction:row;gap:5px;align-items:flex-start}
+#leftControls{left:7px}
+#rightControls{right:7px}
+#leftControls button,#rightControls button{width:34px;height:34px;min-height:34px;padding:0;border-radius:50%;font-size:15px;background:rgba(18,29,34,.68);border-color:rgba(190,208,202,.35);box-shadow:0 1px 5px #0005}
+#camReset{display:none}
+#bottomBar{left:7px;right:7px;bottom:7px;gap:6px;align-items:flex-end}
+#message{max-width:min(42vw,280px);min-height:0;padding:5px 8px;font-size:10px;line-height:1.25;border-radius:8px;background:rgba(8,15,19,.56);border-color:rgba(180,200,195,.2)}
+#actionButtons{gap:5px;flex-wrap:nowrap}
+#actionButtons button{width:40px;height:40px;min-height:40px;padding:0;border-radius:50%;font-size:16px;background:rgba(18,29,34,.72);border-color:rgba(190,208,202,.38)}
+#joystick{left:8px;bottom:54px;width:92px;height:92px}
+#stickBase{width:82px;height:82px;background:rgba(18,29,34,.38);border-color:rgba(220,232,225,.42)}
+#stickKnob{width:36px;height:36px;background:rgba(158,175,174,.82)}
+@media(max-width:520px){
+ #stats{max-width:calc(100vw - 120px);overflow:hidden;text-overflow:ellipsis;font-size:10px;padding:5px 7px}
+ #leftControls,#rightControls{top:7px;gap:4px}
+ #leftControls button,#rightControls button{width:31px;height:31px;min-height:31px;font-size:14px}
+ #bottomBar{bottom:6px;left:6px;right:6px}
+ #message{max-width:34vw;font-size:9px;padding:4px 6px}
+ #actionButtons{gap:4px}
+ #actionButtons button{width:36px;height:36px;min-height:36px;font-size:15px}
+ #joystick{left:6px;bottom:48px;width:84px;height:84px}
+ #stickBase{width:76px;height:76px}
+ #stickKnob{width:34px;height:34px}
+}
+
 </style>
 </head>
 <body>
 <canvas id="game" aria-label="Игровой мир"></canvas>
 <header id="topbar">
-  <div class="panel brand"><b>WASTELAND COLONY</b><small>Версия 0.0.32 · автономный запуск</small></div>
+  <div class="panel brand"><b>WASTELAND COLONY</b><small>Версия 0.0.34 · автономный запуск</small></div>
   <div class="panel" id="stats">Загрузка мира…</div>
 </header>
 <nav id="leftControls">
-  <button id="camReset">⌖ К игроку</button><button id="follow">◎ Свободная камера: выкл.</button><button id="fullscreen">⛶ Полный экран</button>
+  <button id="camReset" aria-label="К игроку" title="Вернуть камеру к игроку">⌖</button><button id="follow" aria-label="Режим камеры" title="Переключить слежение за игроком">◎</button><button id="fullscreen" aria-label="Полный экран" title="Полный экран">⛶</button>
 </nav>
 <nav id="rightControls">
-  <button id="mapToggle" aria-label="Открыть карту">▦</button><button id="save">Сохранить</button><button id="load">Загрузить</button>
+  <button id="mapToggle" aria-label="Открыть карту" title="Карта">▦</button><button id="save" aria-label="Сохранить" title="Сохранить">↓</button><button id="load" aria-label="Загрузить" title="Загрузить">↑</button>
 </nav>
 <div id="instructions" class="panel">
   <b>Как управлять</b><span>1. Ты начинаешь один — без отряда и лагеря.</span><span>2. Нажми на землю или используй джойстик, чтобы двигаться.</span><span>3. Камера следует за персонажем. Нажми «Свободная камера», чтобы осматривать мир отдельно.</span><span>4. Красные фигуры — враждебные разбойники. Подойди и нажми «Атаковать».</span><span>5. Двумя пальцами вращай камеру вокруг путника; своди/разводи пальцы для масштаба. Карта — кнопка ▦.</span>
   <button id="hideHelp" class="minor">Понятно</button>
 </div>
 <div id="joystick" aria-label="Джойстик движения"><div id="stickBase"><div id="stickKnob"></div></div><small>ДВИЖЕНИЕ</small></div>
-<footer id="bottomBar"><div class="panel" id="message">Инициализация…</div><div id="actionButtons"><button id="gather">⛏ Добывать</button><button id="attack">⚔ Атаковать</button><button id="stop">■ Стоп</button></div></footer>
+<footer id="bottomBar"><div class="panel" id="message">Инициализация…</div><div id="actionButtons"><button id="gather" aria-label="Добывать" title="Добывать">⛏</button><button id="attack" aria-label="Атаковать" title="Атаковать">⚔</button><button id="stop" aria-label="Остановиться" title="Остановиться">■</button></div></footer>
 <div id="mapPanel" class="panel" aria-hidden="true">
   <div id="mapHeader"><b>Карта мира</b><button id="mapClose">Закрыть ✕</button></div>
   <canvas id="worldMap" width="600" height="600"></canvas>
@@ -137,7 +167,7 @@ button:active{background:#607a7b;transform:scale(.97)}
   <button id="newGame" class="menu-primary">Новая игра</button>
   <button id="menuContinue">Продолжить игру</button>
   <button id="menuFullscreen">⛶ Полный экран · горизонтальный режим</button>
-  <small>Версия 0.0.32 · браузерная игра</small>
+  <small>Версия 0.0.34 · браузерная игра</small>
  </div>
 </div>
 <div id="startScreen" role="dialog" aria-modal="true" aria-label="Выбор места появления">
@@ -645,7 +675,7 @@ o[8]=(a[4]*b10-a[5]*b08+a[7]*b06)*det;o[9]=(a[1]*b08-a[0]*b10-a[3]*b06)*det;o[10
 o[12]=(a[5]*b07-a[4]*b09-a[6]*b06)*det;o[13]=(a[4]*b08-a[0]*b07+a[1]*b06)*det;o[14]=(a[13]*b01-a[12]*b03-a[14]*b00)*det;o[15]=(a[0]*b09-a[1]*b08+a[2]*b07)*det;return o;}
 function transform(m,v){return{x:m[0]*v.x+m[4]*v.y+m[8]*v.z+m[12]*v.w,y:m[1]*v.x+m[5]*v.y+m[9]*v.z+m[13]*v.w,z:m[2]*v.x+m[6]*v.y+m[10]*v.z+m[14]*v.w,w:m[3]*v.x+m[7]*v.y+m[11]*v.z+m[15]*v.w};}
 function groundPoint(px,py){const inv=invert(viewProjection());if(!inv)return null;const nx=px/canvas.clientWidth*2-1,ny=1-py/canvas.clientHeight*2,n=transform(inv,{x:nx,y:ny,z:-1,w:1}),f=transform(inv,{x:nx,y:ny,z:1,w:1});if(Math.abs(n.w)<1e-7||Math.abs(f.w)<1e-7)return null;const a=V(n.x/n.w,n.y/n.w,n.z/n.w),b=V(f.x/f.w,f.y/f.w,f.z/f.w),d=sub(b,a);if(Math.abs(d.y)<1e-6)return null;let t=-a.y/d.y;if(t<0)return null;let hit=add(a,mul(d,t));for(let i=0;i<12;i++){const h=surfaceHeight(hit.x,hit.z);const nt=(h-a.y)/d.y;if(nt<0)return null;const next=add(a,mul(d,nt));if(Math.hypot(next.x-hit.x,next.z-hit.z)<.015){hit=next;break;}hit=next;t=nt;}hit.y=surfaceHeight(hit.x,hit.z);return hit;}
-function updateUI(){const avgH=Math.round(squad.reduce((a,u)=>a+u.hunger,0)/squad.length),avgF=Math.round(squad.reduce((a,u)=>a+u.fatigue,0)/squad.length);const hh=String(Math.floor(gameMinutes/60)%24).padStart(2,'0'),mm=String(Math.floor(gameMinutes%60)).padStart(2,'0');const currentBiome=biomeAt(squad[0].p.x,squad[0].p.z).name;$('stats').textContent=`${currentBiome}${startRegionId?' · Старт: '+(startRegions.find(r=>r.id===startRegionId)?.name||'') : ''} · День ${dayCount} · ${hh}:${mm} · Еда: ${resources.food} · Дерево: ${resources.wood} · Камень: ${resources.stone} · Здоровье: ${Math.ceil(scoutHealth)}% · Голод: ${avgH}% · Усталость: ${avgF}%`;$('message').textContent=message;$('follow').textContent='◎ Свободная камера: '+(follow?'выкл.':'вкл.');}
+function updateUI(){const avgH=Math.round(squad.reduce((a,u)=>a+u.hunger,0)/squad.length),avgF=Math.round(squad.reduce((a,u)=>a+u.fatigue,0)/squad.length);const hh=String(Math.floor(gameMinutes/60)%24).padStart(2,'0'),mm=String(Math.floor(gameMinutes%60)).padStart(2,'0');$('stats').textContent=`♥ ${Math.ceil(scoutHealth)}%  ·  🍖 ${avgH}%  ·  ⚡ ${avgF}%  ·  День ${dayCount} ${hh}:${mm}  ·  Еда ${resources.food}`;$('message').textContent=message;$('follow').textContent=follow?'◎':'◉';$('follow').title=follow?'Камера следует за игроком':'Свободная камера';$('follow').setAttribute('aria-label',$('follow').title);}
 function issueMove(point){const u=squad[0];const x=clamp(point.x,-WORLD+8,WORLD-8),z=clamp(point.z,-WORLD+8,WORLD-8);if(!isLand(x,z)){message='За береговой линией начинается океан. Выбери точку на континенте.';updateUI();return;}u.target=V(x,surfaceHeight(x,z),z);u.task='move';message='Ты направляешься к указанному месту.';updateUI();}
 function tapWorld(x,y){const p=groundPoint(x,y);if(!p)return;issueMove(p);}
 let pointers=new Map(),cameraGesture=null;
@@ -720,7 +750,7 @@ $('follow').onclick=()=>{follow=!follow;if(follow){cam.x=squad[0].p.x;cam.z=squa
 $('stop').onclick=()=>{const u=squad[0];u.target=null;u.task='idle';message='Ты остановился.';updateUI();};
 $('gather').onclick=()=>{const u=squad[0];let nearest=null,best=1e9;objects.forEach(o=>{const d=Math.hypot(o.x-u.p.x,o.z-u.p.z);if(d<best){best=d;nearest=o;}});if(nearest){u.target=V(nearest.x,surfaceHeight(nearest.x,nearest.z),nearest.z);u.task='gather';u.targetObject=nearest;message=nearest.type==='tree'?'Путник идёт добывать дерево.':'Путник идёт добывать камень.';}updateUI();};
 $('attack').onclick=()=>{const u=squad[0];let target=null,best=3.8;for(const r of raiders)if(r.alive){const d=Math.hypot(r.p.x-u.p.x,r.p.z-u.p.z);if(d<best){best=d;target=r;}}if(!target){message='Враг слишком далеко. Подойди ближе.';}else if(combatCooldown<=0){target.hp-=25;combatCooldown=.7;message=target.hp<=0?'Разбойник повержен. Ты обыскал его и нашёл припасы.':'Путник атаковал разбойника!';if(target.hp<=0){target.alive=false;resources.food+=2;}}updateUI();};
-function save(){const data={version:'0.0.33',startRegionId,squad:squad.map(u=>({p:u.p,name:u.name,hunger:u.hunger,fatigue:u.fatigue})),cam,resources,gameMinutes,dayCount,berryBushes,scoutHealth,raiders};try{localStorage.setItem('wasteland_colony_save',JSON.stringify(data));message='Сохранено на этом устройстве.';}catch(e){message='Браузер запретил локальное сохранение для file://. Игра продолжит работать.';}updateUI();}
+function save(){const data={version:'0.0.34',startRegionId,squad:squad.map(u=>({p:u.p,name:u.name,hunger:u.hunger,fatigue:u.fatigue})),cam,resources,gameMinutes,dayCount,berryBushes,scoutHealth,raiders};try{localStorage.setItem('wasteland_colony_save',JSON.stringify(data));message='Сохранено на этом устройстве.';}catch(e){message='Браузер запретил локальное сохранение для file://. Игра продолжит работать.';}updateUI();}
 function load(){try{const d=JSON.parse(localStorage.getItem('wasteland_colony_save')||'null');if(!d)throw Error();startRegionId=d.startRegionId||'plains';d.squad.forEach((u,i)=>{if(squad[i]){let px=clamp(u.p.x,-WORLD+8,WORLD-8),pz=clamp(u.p.z,-WORLD+8,WORLD-8);if(!isLand(px,pz)){px=squad[0].p.x;pz=squad[0].p.z;}squad[i].p=V(px,surfaceHeight(px,pz),pz);squad[i].target=null;if(Number.isFinite(u.hunger))squad[i].hunger=u.hunger;if(Number.isFinite(u.fatigue))squad[i].fatigue=u.fatigue;}});if(d.cam)cam={...cam,...d.cam,x:Number(d.cam.x)||0,z:Number(d.cam.z)||0,dist:clamp(Number(d.cam.dist)||32,3.5,390)};clampCamera();camYawTarget=cam.yaw;resources={...resources,...(d.resources||{})};if(Number.isFinite(d.gameMinutes))gameMinutes=d.gameMinutes;if(Number.isFinite(d.dayCount))dayCount=d.dayCount;if(Array.isArray(d.berryBushes))d.berryBushes.forEach((b,i)=>{if(berryBushes[i])berryBushes[i].berries=clamp(Number(b.berries)||0,0,3);});if(Number.isFinite(d.scoutHealth))scoutHealth=clamp(d.scoutHealth,0,100);if(Array.isArray(d.raiders))d.raiders.forEach((r,i)=>{if(raiders[i]){raiders[i].hp=clamp(Number(r.hp)||0,0,60);raiders[i].alive=!!r.alive;raiders[i].p=V(r.p.x,0,r.p.z);}});gameStarted=true;$('startScreen').style.display='none';$('mainMenu').style.display='none';follow=true;cam.x=squad[0].p.x;cam.z=squad[0].p.z;message='Сохранение загружено.';}catch(e){message='Сохранение не найдено или повреждено.';}updateUI();}
 function traceCoastPath(ctx,mapScale,ox=0,oy=0){
  ctx.beginPath();
