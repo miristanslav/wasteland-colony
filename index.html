@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#182126">
-<meta name="application-name" content="Wasteland Colony 0.0.27">
+<meta name="application-name" content="Wasteland Colony 0.0.28">
 <style>
 *{box-sizing:border-box}
 html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#111820;color:#eef2e8;font-family:system-ui,Arial;touch-action:none}
@@ -108,7 +108,7 @@ button:active{background:#607a7b;transform:scale(.97)}
 <body>
 <canvas id="game" aria-label="Игровой мир"></canvas>
 <header id="topbar">
-  <div class="panel brand"><b>WASTELAND COLONY</b><small>Версия 0.0.27 · автономный запуск</small></div>
+  <div class="panel brand"><b>WASTELAND COLONY</b><small>Версия 0.0.28 · автономный запуск</small></div>
   <div class="panel" id="stats">Загрузка мира…</div>
 </header>
 <nav id="leftControls">
@@ -137,7 +137,7 @@ button:active{background:#607a7b;transform:scale(.97)}
   <button id="newGame" class="menu-primary">Новая игра</button>
   <button id="menuContinue">Продолжить игру</button>
   <button id="menuFullscreen">⛶ Полный экран · горизонтальный режим</button>
-  <small>Версия 0.0.27 · браузерная игра</small>
+  <small>Версия 0.0.28 · браузерная игра</small>
  </div>
 </div>
 <div id="startScreen" role="dialog" aria-modal="true" aria-label="Выбор места появления">
@@ -166,12 +166,13 @@ if(!gl){$('message').textContent='WebGL недоступен в этом бра�
 const V=(x=0,y=0,z=0)=>({x,y,z}), add=(a,b)=>V(a.x+b.x,a.y+b.y,a.z+b.z), sub=(a,b)=>V(a.x-b.x,a.y-b.y,a.z-b.z), mul=(a,s)=>V(a.x*s,a.y*s,a.z*s);
 const length=a=>Math.hypot(a.x,a.y,a.z), norm=a=>mul(a,1/(length(a)||1)), clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 let cam={x:0,z:0,yaw:0,pitch:.72,dist:32},follow=true,formation=0;let camYawTarget=cam.yaw;
+const CAMERA_ROTATION_SENSITIVITY=.0019,CAMERA_TWIST_SENSITIVITY=.30,CAMERA_ROTATION_SMOOTHING=4.8,CAMERA_FOLLOW_SMOOTHING=5.2;
 function clampCamera(){if(!Number.isFinite(cam.x))cam.x=0;if(!Number.isFinite(cam.z))cam.z=0;if(!Number.isFinite(cam.yaw))cam.yaw=0;if(!Number.isFinite(cam.pitch))cam.pitch=.72;if(!Number.isFinite(cam.dist))cam.dist=32;cam.dist=clamp(cam.dist,16,390);const margin=Math.max(12,cam.dist*.72);cam.x=clamp(cam.x,-WORLD+margin,WORLD-margin);cam.z=clamp(cam.z,-WORLD+margin,WORLD-margin);cam.pitch=clamp(cam.pitch,.38,1.18);}
 let resources={wood:0,stone:0,food:6},message='Ты один в открытом мире. Исследуй окрестности и добывай припасы.';
 let scoutHealth=100,combatCooldown=0;
 let gameMinutes=8*60,survivalTick=0,dayCount=1,animTime=0;
 let gameStarted=false,startRegionId=null;
-const squad=[{p:V(0,0,0),target:null,color:[.25,.65,.78],name:'Путник',task:'idle',hunger:18,fatigue:8}];
+const squad=[{p:V(0,0,0),target:null,color:[.25,.65,.78],name:'Путник',task:'idle',hunger:18,fatigue:8,facing:0,targetFacing:0}];
 function random(n){let x=Math.sin(n*127.1+311.7)*43758.5453;return x-Math.floor(x);}
 // Огромный открытый мир: шесть крупных природных регионов, не квадратные комнаты.
 const WORLD=1000, GRID=6.6666667, GRID_CELLS=300;
@@ -509,27 +510,29 @@ for(const u of squad)u.p.y=surfaceHeight(u.p.x,u.p.z);
 for(const r of raiders)r.p.y=surfaceHeight(r.p.x,r.p.z);
 function drawHumanoid(u,y,vp,hostile=false,moving=false,phase=0){
  const p=u.p,step=moving?Math.sin(animTime*10+phase):0,bob=moving?Math.abs(Math.cos(animTime*10+phase))*.035:0;
+ const facing=Number.isFinite(u.facing)?u.facing:0,fc=Math.cos(facing),fs=Math.sin(facing);
+ const part=(x,yy,z,sx,sy,sz,color)=>{const dx=x-p.x,dz=z-p.z;drawBox(p.x+dx*fc-dz*fs,yy,p.z+dx*fs+dz*fc,sx,sy,sz,color,vp);};
  const torso=hostile?[.48,.17,.14]:(u.color||[.25,.55,.68]),skin=hostile?[.48,.34,.27]:[.66,.48,.35],cloth=hostile?[.20,.16,.14]:[.16,.20,.22],boot=[.10,.11,.11];
  // Ноги и сапоги — отдельные части, поэтому шаг хорошо читается даже на небольшом экране.
  for(let side=-1;side<=1;side+=2){
   const swing=step*side*.13,px=p.x+side*.13,pz=p.z+swing;
-  drawBox(px,y,pz,.16,.57,.19,cloth,vp);
-  drawBox(px,y+.01,pz-.025,.19,.14,.27,boot,vp);
+  part(px,y,pz,.16,.57,.19,cloth);
+  part(px,y+.01,pz-.025,.19,.14,.27,boot);
  }
  // Таз, корпус и пояс.
- drawBox(p.x,y+.53+bob,p.z,.43,.25,.29,cloth,vp);
- drawBox(p.x,y+.73+bob,p.z,.48,.57,.31,torso,vp);
- drawBox(p.x,y+.76+bob,p.z-.164,.30,.12,.025,hostile?[.30,.12,.10]:[.72,.56,.30],vp);
+ part(p.x,y+.53+bob,p.z,.43,.25,.29,cloth);
+ part(p.x,y+.73+bob,p.z,.48,.57,.31,torso);
+ part(p.x,y+.76+bob,p.z-.164,.30,.12,.025,hostile?[.30,.12,.10]:[.72,.56,.30]);
  // Руки с простым встречным движением.
  for(let side=-1;side<=1;side+=2){
   const armSwing=-step*side*.11,ax=p.x+side*.31,az=p.z+armSwing;
-  drawBox(ax,y+.62+bob,az,.14,.48,.16,torso,vp);
-  drawBox(ax,y+.52+bob,az-.015,.15,.13,.17,skin,vp);
+  part(ax,y+.62+bob,az,.14,.48,.16,torso);
+  part(ax,y+.52+bob,az-.015,.15,.13,.17,skin);
  }
  // Шея, голова и волосы/капюшон.
- drawBox(p.x,y+1.27+bob,p.z,.13,.14,.14,skin,vp);
- drawBox(p.x,y+1.39+bob,p.z-.015,.29,.31,.29,skin,vp);
- drawBox(p.x,y+1.62+bob,p.z+.005,.30,.09,.30,hostile?[.16,.12,.10]:[.12,.16,.18],vp);
+ part(p.x,y+1.27+bob,p.z,.13,.14,.14,skin);
+ part(p.x,y+1.39+bob,p.z-.015,.29,.31,.29,skin);
+ part(p.x,y+1.62+bob,p.z+.005,.30,.09,.30,hostile?[.16,.12,.10]:[.12,.16,.18]);
 }
 function render(){
  gl.clearColor(.035,.145,.205,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);gl.enable(gl.DEPTH_TEST);
@@ -608,7 +611,7 @@ canvas.addEventListener('pointermove',e=>{
    // Масштаб и вращение работают одновременно. Угол меняется плавно через camYawTarget.
    cam.dist=clamp(cam.dist*cameraGesture.lastDist/Math.max(1,pair.dist),16,390);
    const twist=angleDelta(pair.angle,cameraGesture.lastAngle);
-   if(Math.abs(twist)>.0001)camYawTarget-=twist*.62;
+   if(Math.abs(twist)>.0001)camYawTarget-=twist*CAMERA_TWIST_SENSITIVITY;
    cameraGesture.lastDist=pair.dist;cameraGesture.lastAngle=pair.angle;
    clampCamera();
   }
@@ -617,7 +620,7 @@ canvas.addEventListener('pointermove',e=>{
  if(!cameraGesture||cameraGesture.pinch)return;
  const dx=e.clientX-cameraGesture.x,dy=e.clientY-cameraGesture.y;
  if(Math.hypot(dx,dy)>6)cameraGesture.moved=true;
- if(follow){camYawTarget-=dx*.0038;cam.pitch=clamp(cam.pitch+dy*.0022,.40,1.12);cam.x=squad[0].p.x;cam.z=squad[0].p.z;}
+ if(follow){camYawTarget-=dx*CAMERA_ROTATION_SENSITIVITY;cam.pitch=clamp(cam.pitch+dy*.00135,.40,1.12);}
  else{const pitchScale=1/Math.max(.42,Math.cos(cam.pitch));const scale=cam.dist/Math.max(320,canvas.clientHeight)*.82*pitchScale,c=Math.cos(cam.yaw),ss=Math.sin(cam.yaw);cam.x=cameraGesture.cx+(-dx*c+dy*ss)*scale;cam.z=cameraGesture.cz+(-dx*ss-dy*c)*scale;clampCamera();}
 });
 canvas.addEventListener('pointerup',e=>{
@@ -634,13 +637,15 @@ function joyEnd(e){if(e.pointerId!==joyPointer)return;joyPointer=null;moveVector
 base.addEventListener('pointerup',joyEnd);base.addEventListener('pointercancel',joyEnd);
 function update(dt){if(!gameStarted)return;animTime+=dt;let moving=false;const speed=4.1;
  gameMinutes+=dt*3; if(gameMinutes>=1440){gameMinutes-=1440;dayCount++;} survivalTick+=dt; if(survivalTick>=5){const ticks=Math.floor(survivalTick/5);survivalTick%=5;squad.forEach(u=>{u.hunger=clamp(u.hunger+ticks*.75,0,100);const resting=(gameMinutes>=22*60||gameMinutes<6*60);if(resting)u.fatigue=clamp(u.fatigue-ticks*1.8,0,100);else if(u.task!=='idle')u.fatigue=clamp(u.fatigue+ticks*.55,0,100);else u.fatigue=clamp(u.fatigue-ticks*.25,0,100);if(u.hunger>=70&&resources.food>0){resources.food--;u.hunger=Math.max(0,u.hunger-48);} });updateUI();}
-if(Math.hypot(moveVector.x,moveVector.y)>.12){const forward=V(Math.sin(cam.yaw),0,-Math.cos(cam.yaw)),right=V(Math.cos(cam.yaw),0,Math.sin(cam.yaw));let dir=add(mul(right,moveVector.x),mul(forward,-moveVector.y));dir=norm(dir);const u=squad[0];u.target=null;const nx=clamp(u.p.x+dir.x*speed*dt,-WORLD+8,WORLD-8),nz=clamp(u.p.z+dir.z*speed*dt,-WORLD+8,WORLD-8);if(isLand(nx,nz)){u.p.x=nx;u.p.z=nz;u.p.y=surfaceHeight(nx,nz);moving=true;}}
-squad.forEach(u=>{if(!u.target)return;const d=sub(u.target,u.p);d.y=0;const l=Math.hypot(d.x,d.z);if(l<.12){u.target=null;if(u.task==='gather'&&u.targetObject){const o=u.targetObject;if(objects.includes(o)){if(o.type==='tree'){resources.wood+=2;message='Путник добыл 2 единицы дерева.';}else{resources.stone+=1;message='Путник добыл 1 единицу камня.';}objects.splice(objects.indexOf(o),1);}u.targetObject=null;}else if(u.task!=='rest')u.task='idle';updateUI();return;}const step=Math.min(l,3.2*dt),nx=clamp(u.p.x+d.x/l*step,-WORLD+8,WORLD-8),nz=clamp(u.p.z+d.z/l*step,-WORLD+8,WORLD-8);if(isLand(nx,nz)){u.p.x=nx;u.p.z=nz;u.p.y=surfaceHeight(nx,nz);}else u.target=null;});
+if(Math.hypot(moveVector.x,moveVector.y)>.12){const forward=V(Math.sin(cam.yaw),0,-Math.cos(cam.yaw)),right=V(Math.cos(cam.yaw),0,Math.sin(cam.yaw));let dir=add(mul(right,moveVector.x),mul(forward,-moveVector.y));dir=norm(dir);const u=squad[0];u.target=null;const nx=clamp(u.p.x+dir.x*speed*dt,-WORLD+8,WORLD-8),nz=clamp(u.p.z+dir.z*speed*dt,-WORLD+8,WORLD-8);if(isLand(nx,nz)){u.p.x=nx;u.p.z=nz;u.p.y=surfaceHeight(nx,nz);u.targetFacing=Math.atan2(dir.x,-dir.z);moving=true;}}
+squad.forEach(u=>{if(!u.target)return;const d=sub(u.target,u.p);d.y=0;const l=Math.hypot(d.x,d.z);if(l<.12){u.target=null;if(u.task==='gather'&&u.targetObject){const o=u.targetObject;if(objects.includes(o)){if(o.type==='tree'){resources.wood+=2;message='Путник добыл 2 единицы дерева.';}else{resources.stone+=1;message='Путник добыл 1 единицу камня.';}objects.splice(objects.indexOf(o),1);}u.targetObject=null;}else if(u.task!=='rest')u.task='idle';updateUI();return;}const step=Math.min(l,3.2*dt),nx=clamp(u.p.x+d.x/l*step,-WORLD+8,WORLD-8),nz=clamp(u.p.z+d.z/l*step,-WORLD+8,WORLD-8);if(isLand(nx,nz)){u.p.x=nx;u.p.z=nz;u.p.y=surfaceHeight(nx,nz);u.targetFacing=Math.atan2(d.x,-d.z);}else u.target=null;});
+// Поворот корпуса плавно следует за направлением движения относительно камеры.
+squad.forEach(u=>{if(!Number.isFinite(u.targetFacing))u.targetFacing=Number.isFinite(u.facing)?u.facing:0;if(!Number.isFinite(u.facing))u.facing=u.targetFacing;u.facing+=angleDelta(u.targetFacing,u.facing)*(1-Math.exp(-dt*9));});
 // Враждебные патрули замечают разведчика, преследуют его и наносят урон вблизи.
 combatCooldown=Math.max(0,combatCooldown-dt);for(const r of raiders){if(!r.alive)continue;const d=sub(squad[0].p,r.p),dist=Math.hypot(d.x,d.z);if(dist<13){if(dist>1.65){const nx=clamp(r.p.x+d.x/(dist||1)*1.65*dt,-WORLD+8,WORLD-8),nz=clamp(r.p.z+d.z/(dist||1)*1.65*dt,-WORLD+8,WORLD-8);if(isLand(nx,nz)){r.p.x=nx;r.p.z=nz;r.p.y=surfaceHeight(nx,nz);}}else if(r.attack<=0){scoutHealth=Math.max(0,scoutHealth-7);r.attack=1.25;message=scoutHealth<=0?'Путник выведен из строя! Отступи — ':'На разведчика напали! Отойди или нажми «Атаковать».';updateUI();}}r.attack=Math.max(0,r.attack-dt);}
 // Биомы, рельеф, растительность и животные закреплены в мировых координатах.
 // В игровом цикле их координаты не изменяются.
-{const yawDiff=angleDelta(camYawTarget,cam.yaw);cam.yaw+=yawDiff*(1-Math.exp(-dt*7.5));if(Math.abs(yawDiff)<.00015)cam.yaw=camYawTarget;}if(follow){const u=squad[0];cam.x+=(u.p.x-cam.x)*.22;cam.z+=(u.p.z-cam.z)*.22;clampCamera();}
+{const yawDiff=angleDelta(camYawTarget,cam.yaw);cam.yaw+=yawDiff*(1-Math.exp(-dt*CAMERA_ROTATION_SMOOTHING));if(Math.abs(yawDiff)<.00015)cam.yaw=camYawTarget;}if(follow){const u=squad[0];const followBlend=1-Math.exp(-dt*CAMERA_FOLLOW_SMOOTHING);cam.x+=(u.p.x-cam.x)*followBlend;cam.z+=(u.p.z-cam.z)*followBlend;clampCamera();}
 }
 let last=performance.now();function loop(t){const dt=Math.min(.05,(t-last)/1000);last=t;update(dt);requestAnimationFrame(loop);}requestAnimationFrame(loop);
 $('hideHelp').onclick=()=>$('instructions').style.display='none';
@@ -659,7 +664,7 @@ $('follow').onclick=()=>{follow=!follow;if(follow){cam.x=squad[0].p.x;cam.z=squa
 $('stop').onclick=()=>{const u=squad[0];u.target=null;u.task='idle';message='Ты остановился.';updateUI();};
 $('gather').onclick=()=>{const u=squad[0];let nearest=null,best=1e9;objects.forEach(o=>{const d=Math.hypot(o.x-u.p.x,o.z-u.p.z);if(d<best){best=d;nearest=o;}});if(nearest){u.target=V(nearest.x,surfaceHeight(nearest.x,nearest.z),nearest.z);u.task='gather';u.targetObject=nearest;message=nearest.type==='tree'?'Путник идёт добывать дерево.':'Путник идёт добывать камень.';}updateUI();};
 $('attack').onclick=()=>{const u=squad[0];let target=null,best=3.8;for(const r of raiders)if(r.alive){const d=Math.hypot(r.p.x-u.p.x,r.p.z-u.p.z);if(d<best){best=d;target=r;}}if(!target){message='Враг слишком далеко. Подойди ближе.';}else if(combatCooldown<=0){target.hp-=25;combatCooldown=.7;message=target.hp<=0?'Разбойник повержен. Ты обыскал его и нашёл припасы.':'Путник атаковал разбойника!';if(target.hp<=0){target.alive=false;resources.food+=2;}}updateUI();};
-function save(){const data={version:'0.0.27',startRegionId,squad:squad.map(u=>({p:u.p,name:u.name,hunger:u.hunger,fatigue:u.fatigue})),cam,resources,gameMinutes,dayCount,berryBushes,scoutHealth,raiders};try{localStorage.setItem('wasteland_colony_save',JSON.stringify(data));message='Сохранено на этом устройстве.';}catch(e){message='Браузер запретил локальное сохранение для file://. Игра продолжит работать.';}updateUI();}
+function save(){const data={version:'0.0.28',startRegionId,squad:squad.map(u=>({p:u.p,name:u.name,hunger:u.hunger,fatigue:u.fatigue})),cam,resources,gameMinutes,dayCount,berryBushes,scoutHealth,raiders};try{localStorage.setItem('wasteland_colony_save',JSON.stringify(data));message='Сохранено на этом устройстве.';}catch(e){message='Браузер запретил локальное сохранение для file://. Игра продолжит работать.';}updateUI();}
 function load(){try{const d=JSON.parse(localStorage.getItem('wasteland_colony_save')||'null');if(!d)throw Error();startRegionId=d.startRegionId||'plains';d.squad.forEach((u,i)=>{if(squad[i]){let px=clamp(u.p.x,-WORLD+8,WORLD-8),pz=clamp(u.p.z,-WORLD+8,WORLD-8);if(!isLand(px,pz)){px=squad[0].p.x;pz=squad[0].p.z;}squad[i].p=V(px,surfaceHeight(px,pz),pz);squad[i].target=null;if(Number.isFinite(u.hunger))squad[i].hunger=u.hunger;if(Number.isFinite(u.fatigue))squad[i].fatigue=u.fatigue;}});if(d.cam)cam={...cam,...d.cam,x:Number(d.cam.x)||0,z:Number(d.cam.z)||0,dist:clamp(Number(d.cam.dist)||32,12,390)};clampCamera();camYawTarget=cam.yaw;resources={...resources,...(d.resources||{})};if(Number.isFinite(d.gameMinutes))gameMinutes=d.gameMinutes;if(Number.isFinite(d.dayCount))dayCount=d.dayCount;if(Array.isArray(d.berryBushes))d.berryBushes.forEach((b,i)=>{if(berryBushes[i])berryBushes[i].berries=clamp(Number(b.berries)||0,0,3);});if(Number.isFinite(d.scoutHealth))scoutHealth=clamp(d.scoutHealth,0,100);if(Array.isArray(d.raiders))d.raiders.forEach((r,i)=>{if(raiders[i]){raiders[i].hp=clamp(Number(r.hp)||0,0,60);raiders[i].alive=!!r.alive;raiders[i].p=V(r.p.x,0,r.p.z);}});gameStarted=true;$('startScreen').style.display='none';$('mainMenu').style.display='none';follow=true;cam.x=squad[0].p.x;cam.z=squad[0].p.z;message='Сохранение загружено.';}catch(e){message='Сохранение не найдено или повреждено.';}updateUI();}
 function traceCoastPath(ctx,mapScale,ox=0,oy=0){
  ctx.beginPath();
